@@ -17,17 +17,61 @@
       color: #1d1d1f;
       min-height: 100dvh; 
       padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
+    h1 { margin-bottom: 20px; }
+    
+    /* Import Button Styling */
+    .import-btn {
+      background: #007aff;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-size: 17px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 20px;
+      width: 100%;
+      max-width: 300px;
+    }
+    .import-btn:active { opacity: 0.8; }
+
+    /* Library List Styling */
+    #library {
+      width: 100%;
+      max-width: 600px;
+      list-style: none;
+    }
+    .song-item {
+      background: #f5f5f7;
+      padding: 12px 16px;
+      margin-bottom: 8px;
+      border-radius: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .song-info { display: flex; flex-direction: column; }
+    .song-name { font-weight: 500; font-size: 16px; }
+    .song-duration { font-size: 13px; color: #6e6e73; margin-top: 2px; }
+    .status-msg { margin-top: 10px; font-size: 14px; color: #6e6e73; }
   </style>
 </head>
 <body>
   <h1>Taktwerk</h1>
-  <p>v0.1 Shell – Ready for next step</p>
   
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js');
-    }
-  </script>
+  <!-- Hidden Input & Visible Button -->
+  <input type="file" id="audioPicker" multiple accept="audio/*" style="display:none">
+  <button id="importBtn" class="import-btn">Import Songs</button>
+  
+  <div id="status" class="status-msg"></div>
+  
+  <!-- Library List -->
+  <ul id="library"></ul>
+  
+  <script type="module" src="app.js"></script>
 </body>
 </html>
