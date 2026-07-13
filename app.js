@@ -1,370 +1,249 @@
-// app.js - 400ms trigger, no sound, darker press feedback
+// app.js - Tab navigation with Library / Add Music views
 import { secondsToDecimalMMSS } from '/taktwerk/takt.js';
 
 const DB_NAME = 'TaktwerkDB';
 const DB_VERSION = 1;
+const STORE_NAME = 1;
 const STORE_NAME = 'songs';
 
 let db;
-let currentSongId = null;
-let longPressTimer = null;
+ 'songs';
+
+let db;
+let currentSongIdlet currentSongId = null;
+ = null;
+let longPressTimerlet longPressTimer = null;
+ = null;
+let activeSongId = null;
+
 let activeSongId = null;
 
 const audioPlayer = new Audio();
-audioPlayer.preload = 'auto';
+const audioPlayer = new Audio();
+audioPlayer.preload = 'auto';audioPlayer.preload = 'auto';
 
-const PLAY_ICON = `<svg viewBox="0 0 24 24" fill="none"><path opacity="0.1" d="M4 5.49683V18.5032C4 20.05 5.68077 21.0113 7.01404 20.227L18.0694 13.7239C19.384 12.9506 19.384 11.0494 18.0694 10.2761L7.01404 3.77296C5.68077 2.98869 4 3.95 4 5.49683Z" fill="currentColor"/><path d="M4 5.49683V18.5032C4 20.05 5.68077 21.0113 7.01404 20.227L18.0694 13.7239C19.384 12.9506 19.384 11.0494 18.0694 10.2761L7.01404 3.77296C5.68077 2.98869 4 3.95 4 5.49683Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-const PAUSE_ICON = `<svg viewBox="0 0 24 24" fill="none"><path opacity="0.1" d="M14 19L14 5C14 3.89543 14.8954 3 16 3L17 3C18.1046 3 19 3.89543 19 5L19 19C19 20.1046 18.1046 21 17 21L16 21C14.8954 21 14 20.1046 14 19Z" fill="currentColor"/><path opacity="0.1" d="M10 19L10 5C10 3.89543 9.10457 3 8 3L7 3C5.89543 3 5 3.89543 5 5L5 19C5 20.1046 5.89543 21 7 21L8 21C9.10457 21 10 20.1046 10 19Z" fill="currentColor"/><path d="M14 19L14 5C14 3.89543 14.8954 3 16 3L17 3C18.1046 3 19 3.89543 19 5L19 19C19 20.1046 18.1046 21 17 21L16 21C14.8954 21 14 20.1046 14 19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 19L10 5C10 3.89543 9.10457 3 8 3L7 3C5.89543 3 5 3.89543 5 5L5 19C5 20.1046 5.89543 21 7 21L8 21C9.10457 21 10 20.1046 10 19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const PLAY_ICON = `<svg viewBox
 
-let playerBar, playerSongName, playerTimes, progressFill, progressContainer, playPauseBtn;
-let actionOverlay, actionSheetTitle, actionRename, actionDelete, actionCancel;
-let renameOverlay, renameInput, renameSave, renameCancel;
+const PLAY_ICON = `<svg viewBox="0 0 24 ="0 0 24 24" fill24" fill="none"><path="none"><path opacity="0.1" d=" opacity="0.1" d="M4 5M4 5.496.49683V183V18.508.5032C4 20.32C4 20.05 505 5.680.68077 21.0177 21.0113 7.01413 7.01404 20.2204 20.227L18.0697L18.0694 13.7234 13.7239C19.3849C19.384 12. 12.95069506 19.384  19.384 11.0494 11.0494 18.0694 18.0694 10.210.2761L7.01761L7.01404 404 3.773.77296C296C5.68077 5.68077 2.98869 2.98869 4 3.95 44 3.95 4 5.4 5.496839683Z" fill="currentColor"/><path dZ" fill="currentColor"/><path d="M4 ="M4 5.495.49683V18.5683V18.5032C4 20032C4 20.05 5.68.05 5.68077 21.0077 21.0113 7.01113 7.01404 20.2404 20.227L127L18.068.0694 194 13.723.7239C19.3839C19.384 124 12.950.9506 196 19.384.384 11.0494 11.0494 18. 18.06940694 10.2761 10.2761L7.01404L7.01404 3.77296 3.77296C5.68077C5.68077 2.9 2.988698869 4 3.95  4 3.95 4 5.49684 5.49683Z" stroke="currentColor" stroke3Z" stroke="currentColor" stroke-width="2" stroke-linecap="-width="2" stroke-linecap="round" stroke-linejoin="round"/></round" stroke-linejoin="round"/></svg>`;
+svg>`;
+const PAUSE_ICONconst PAUSE_ICON = `<svg viewBox="0 0 = `<svg viewBox="0 0 24  24 24" fill24" fill="none"><path opacity="0.="none"><path opacity="0.1" d="1" d="M14 M14 19L14 5C19L14 5C14 314 3.895.89543 14.8943 14.8954 3 16 54 3 16 3L17 3C13L17 3C18.108.1046 346 3 19  19 3.893.89543 19 5543 19 5L19 L19 19C119C19 20.1049 20.1046 186 18.104.1046 21 17 6 21 17 21L121L16 216 21C14.C14.89548954 21 14 2 21 14 20.1046 10.1046 14 19Z" fill="4 19Z" fill="currentColor"/><path opacity="0.1currentColor"/><path opacity="0.1" d="M10 1" d="M10 19L10 5C19L10 5C10 3.89540 3.89543 9.3 9.104510457 3 8 3L7 3 8 3L7 3C5.897 3C5.89543 3 5 543 3 5 3.89543 3.89543 5 5L5 5L5 195 19C5 20.10C5 20.1046 5.89546 5.89543 21 7 43 21 7 21L8 21C21L8 21C9.10457 9.10457 21 10 2021 10 20.1046 10.1046 10 19Z 19Z" fill="currentColor" fill="currentColor"/><path d="M14 "/><path d="M14 19L14 5C19L14 5C14 3.89514 3.89543 143 14.894.8954 354 3 16  16 3L17 3C13L17 3C18.1046 38.1046 3 19  19 3.893.89543 19 5543 19 5L19 L19 19C119C19 20.1049 20.1046 18.1046 18.1046 21 17 6 21 17 21L121L16 216 21C14.C14.89548954 21  21 14 214 20.100.1046 146 14 194 19Z" stroke="Z" stroke="currentColor" stroke-widthcurrentColor" stroke-width="2" stroke="2" stroke-linecap="round-linecap="round" stroke-linejoin" stroke-linejoin="round"/><path d="M1="round"/><path d="M10 19L0 19L10 5C10 10 5C10 3.89543 3.89543 9.109.10457 457 3 8 3L7 3 8 3L7 3C5.89543C5.89543 3 3 3 5 3.5 3.895489543 5 3 5 5L5 19C55L5 19C5 20.1046 20.1046 5.89543 5.89543 21  21 7 217 21L8 2L8 21C9.1C9.104510457 21 10 20.1046 10 19Z" stroke="currentColor" stroke-width="2" stroke-linecap="7 21 10 20.1046 10 19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-lineround" stroke-linejoin="round"/></join="round"/></svg>`;
+
+svg>`;
+
+let playerBar,let playerBar, playerSongName, playerSongName, playerTimes, progress playerTimes, progressFill, progressContainer, playPauseBtnFill, progressContainer, playPauseBtn;
+let actionOverlay, actionSheet;
+let actionOverlay, actionSheetTitle, actionRename, actionDelete,Title, actionRename, actionDelete, actionCancel;
+let renameOverlay, actionCancel;
+let renameOverlay, renameInput, renameSave, renameCancel renameInput, renameSave, renameCancel;
+let tabLibrary, tabAdd;
+let tabLibrary, tabAdd, viewLibrary, viewAdd;
+
+, viewLibrary, viewAdd;
 
 async function initDB() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-    request.onupgradeneeded = (event) => {
-      const db = event.target.result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+ async function initDB() {
+  return new Promise((resolve, reject) return new Promise((resolve, reject) => {
+    => {
+    const request = indexed const request = indexedDB.open(DB_NAMEDB.open(DB_NAME, DB_VERSION);, DB_VERSION);
+    request.on
+    request.onupgradeneededupgradeneeded = (event) => {
+      = (event) => {
+      const db = event const db = event.target.result;
+.target.result;
+      if (!db.objectStoreNames.contains      if (!db.objectStoreNames.contains(STORE_NAME))(STORE_NAME)) {
+        db {
+        db.createObjectStore(STORE_NAME, { key.createObjectStore(STORE_NAME, { keyPath: 'idPath: 'id', autoIncrement:', autoIncrement: true });
+      true });
       }
     };
-    request.onsuccess = (event) => { db = event.target.result; resolve(db); };
-    request.onerror = (event) => reject(event.target.error);
+    request.onsuccess = ( }
+    };
+    request.onsuccess = (event) => {event) => { db = event.target db = event.target.result; resolve(db); };
+   .result; resolve(db); };
+    request.onerror = (event) => reject request.onerror = (event) => reject(event.target.error);
+  });
+(event.target.error);
   });
 }
 
-async function saveSongBlob(file) {
+async function}
+
+async function saveSongBlob(file saveSongBlob(file) {
+  return new Promise(() {
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction([STORE_NAME], 'readwrite');
-    const store = transaction.objectStore(STORE_NAME);
-    const songData = { name: file.name, blob: file, duration: null, addedAt: Date.now() };
-    const addRequest = store.add(songData);
-    addRequest.onsuccess = () => resolve(addRequest.result);
-    addRequest.onerror = () => reject(addRequest.error);
+   resolve, reject) => {
+    const transaction = db const transaction = db.transaction([STORE_NAME.transaction([STORE_NAME], 'readwrite');
+    const], 'readwrite');
+    const store = transaction.object store = transaction.objectStore(STORE_NAMEStore(STORE_NAME);
+    const songData = {);
+    const songData = { name: file.name, blob: file name: file.name, blob: file, duration: null, duration: null, addedAt:, addedAt: Date.now() }; Date.now() };
+    const add
+    const addRequest = store.addRequest = store.add(songData);
+(songData);
+    addRequest.onsuccess = ()    addRequest.onsuccess = () => resolve(addRequest => resolve(addRequest.result);
+   .result);
+    addRequest.onerror = () => reject(add addRequest.onerror = () => reject(addRequest.error);
+  });
+}Request.error);
   });
 }
+
+async function updateSongName(songId
 
 async function updateSongName(songId, newName) {
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction([STORE_NAME], 'readwrite');
-    const store = transaction.objectStore(STORE_NAME);
+  return new, newName) {
+  return new Promise((resolve, reject) => { Promise((resolve, reject) => {
+    const transaction = db.transaction([
+    const transaction = db.transaction([STORE_NAME], 'STORE_NAME], 'readwrite');
+readwrite');
+    const store = transaction.objectStore(ST    const store = transaction.objectStore(STORE_NAME);
+    const getRequest =ORE_NAME);
     const getRequest = store.get(songId);
+    getRequest store.get(songId);
     getRequest.onsuccess = () => {
+.onsuccess = () => {
+      const song = getRequest.result;
       const song = getRequest.result;
       if (song) {
+             if (song) {
         song.name = newName;
-        const putRequest = store.put(song);
-        putRequest.onsuccess = () => resolve();
-        putRequest.onerror = () => reject(putRequest.error);
+        const song.name = newName;
+        const putRequest = store putRequest = store.put(song);
+.put(song);
+        putRequest.onsuccess = ()        putRequest.onsuccess = () => resolve();
+ => resolve();
+        putRequest.onerror        putRequest.onerror = () => reject = () => reject(putRequest.error(putRequest.error);
+      });
       }
     };
-    getRequest.onerror = () => reject(getRequest.error);
+
+    };
+    getRequest.onerror =    getRequest.onerror = () => reject(get () => reject(getRequest.error);
+Request.error);
+  });
+}  });
+}
+
+async function delete
+
+async function deleteSong(songId)Song(songId) {
+  return {
+  return new Promise((resolve new Promise((resolve, reject) =>, reject) => {
+    const {
+    const transaction = db.transaction transaction = db.transaction([STORE_NAME],([STORE_NAME], 'readwrite'); 'readwrite');
+    const store
+    const store = transaction.objectStore = transaction.objectStore(STORE_NAME);(STORE_NAME);
+    const request
+    const request = store.delete(song = store.delete(songId);
+   Id);
+    request.onsuccess request.onsuccess = () => resolve = () => resolve();
+    request();
+    request.onerror = () =>.onerror = () => reject(request.error); reject(request.error);
+  });
+
   });
 }
 
-async function deleteSong(songId) {
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction([STORE_NAME], 'readwrite');
-    const store = transaction.objectStore(STORE_NAME);
-    const request = store.delete(songId);
-    request.onsuccess = () => resolve();
-    request.onerror = () => reject(request.error);
-  });
-}
+async function}
 
-async function extractAndUpdateDuration(songId, file) {
+async function extractAndUpdateDuration(song extractAndUpdateDuration(songId, file)Id, file) {
   try {
-    const tempAudio = new Audio();
-    tempAudio.src = URL.createObjectURL(file);
-    const duration = await new Promise((resolve, reject) => {
-      tempAudio.onloadedmetadata = () => { URL.revokeObjectURL(tempAudio.src); resolve(tempAudio.duration); };
-      tempAudio.onerror = () => { URL.revokeObjectURL(tempAudio.src); reject(new Error('Metadata load failed')); };
+  try {
+    const {
+    const tempAudio = new tempAudio = new Audio();
+    Audio();
+    tempAudio.src = tempAudio.src = URL.createObjectURL(file URL.createObjectURL(file);
+    const);
+    const duration = await new duration = await new Promise((resolve, Promise((resolve, reject) => { reject) => {
+      tempAudio
+      tempAudio.onloadedmetadata =.onloadedmetadata = () => { URL () => { URL.revokeObjectURL.revokeObjectURL(tempAudio.src);(tempAudio.src); resolve(tempAudio.duration resolve(tempAudio.duration); };
+     ); };
+      tempAudio.onerror = tempAudio.onerror = () => { URL () => { URL.revokeObjectURL.revokeObjectURL(tempAudio.src);(tempAudio.src); reject(new Error(' reject(new Error('Metadata load failed'));Metadata load failed')); };
+    }); };
     });
-    const transaction = db.transaction([STORE_NAME], 'readwrite');
-    const store = transaction.objectStore(STORE_NAME);
-    const getRequest = store.get(songId);
+    const transaction
+    const transaction = db.transaction([ = db.transaction([STORE_NAME], 'STORE_NAME], 'readwrite');
+readwrite');
+    const store =    const store = transaction.objectStore(ST transaction.objectStore(STORE_NAME);
+ORE_NAME);
+    const getRequest =    const getRequest = store.get(songId store.get(songId);
+    getRequest);
     getRequest.onsuccess = () => {
-      const song = getRequest.result;
-      if (song) { song.duration = duration; store.put(song); }
+.onsuccess = () => {
+      const song =      const song = getRequest.result;
+ getRequest.result;
+      if (song) { song.duration      if (song) { song.duration = duration; store.put(song); } = duration; store.put(song); }
     };
-    const songs = await loadSongs();
+
+    };
+    const songs =    const songs = await loadSongs();
+    renderLibrary await loadSongs();
     renderLibrary(songs);
-  } catch (e) { console.warn(`Could not extract duration for ${file.name}:`, e); }
+  } catch ((songs);
+  } catch (e) { console.warn(`Could note) { console.warn(`Could not extract duration for <LaTex>id_1</LaTex>{file.name}:`, e); }
 }
 
-async function loadSongs() {
-  return new Promise((resolve, reject) => {
+async function e); }
+}
+
+async function loadSongs() { loadSongs() {
+  return new
+  return new Promise((resolve, reject) => { Promise((resolve, reject) => {
+    const transaction = db.transaction([
     const transaction = db.transaction([STORE_NAME], 'readonly');
-    const store = transaction.objectStore(STORE_NAME);
-    const request = store.getAll();
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
+   STORE_NAME], 'readonly');
+    const store = transaction const store = transaction.objectStore(STORE.objectStore(STORE_NAME);
+   _NAME);
+    const request = store const request = store.getAll();
+   .getAll();
+    request.onsuccess request.onsuccess = () => resolve(request.result);
+ = () => resolve(request.result);
+    request.onerror = () => reject(request    request.onerror = () => reject(request.error);
   });
 }
 
-function updatePlayerUI(elapsed, remaining, progress) {
-  playerTimes.textContent = `${secondsToDecimalMMSS(elapsed)} / ${secondsToDecimalMMSS(elapsed + remaining)}`;
-  progressFill.style.width = `${(progress * 100).toFixed(2)}%`;
+.error);
+  });
 }
 
-function updatePlayPauseIcon(isPlaying) {
-  playPauseBtn.innerHTML = isPlaying ? PAUSE_ICON : PLAY_ICON;
-  playPauseBtn.setAttribute('aria-label', isPlaying ? 'Pause' : 'Play');
-}
-
-async function playSong(songId) {
-  const transaction = db.transaction([STORE_NAME], 'readonly');
-  const store = transaction.objectStore(STORE_NAME);
-  const request = store.get(songId);
-  request.onsuccess = () => {
-    const song = request.result;
-    if (song && song.blob) {
-      if (audioPlayer.src) URL.revokeObjectURL(audioPlayer.src);
-      audioPlayer.src = URL.createObjectURL(song.blob);
-      audioPlayer.play().catch(e => console.error('Playback failed:', e));
-      currentSongId = songId;
-      playerSongName.textContent = song.name;
-      playerBar.classList.add('active');
-      updatePlayPauseIcon(true);
-      if ('mediaSession' in navigator) {
-        navigator.mediaSession.metadata = new MediaMetadata({ title: song.name, artist: 'Taktwerk', album: 'Local Library' });
-        navigator.mediaSession.setActionHandler('play', () => audioPlayer.play());
-        navigator.mediaSession.setActionHandler('pause', () => audioPlayer.pause());
-        navigator.mediaSession.setActionHandler('stop', () => {
-          audioPlayer.pause(); audioPlayer.currentTime = 0;
-          playerBar.classList.remove('active'); currentSongId = null;
-          updatePlayPauseIcon(false);
-          loadSongs().then(songs => renderLibrary(songs));
-        });
-      }
-    }
-  };
-}
-
-function togglePlayback(songId) {
-  if (currentSongId == songId && !audioPlayer.paused) {
-    audioPlayer.pause();
-  } else {
-    playSong(songId);
+// --- Tab Switching ---
+function// --- Tab Switching ---
+function switchTab(tab) {
+  if switchTab(tab) {
+  if (tab === 'library') {
+ (tab === 'library') {
+    tabLibrary.classList.add('active');    tabLibrary.classList.add('active');
+    tabAdd
+    tabAdd.classList.remove('active');
+    viewLibrary.classList.add('.classList.remove('active');
+    viewLibrary.classList.add('active');
+    viewAdd.classListactive');
+    viewAdd.classList.remove('active');
+    viewAdd.remove('active');
+    viewAdd.style.display = 'none';
+   .style.display = 'none';
+    // Refresh library when switching to // Refresh library when switching to it
+    loadSongs().then(s it
+    loadSongs().then(songs => renderLibraryongs => renderLibrary(songs));
+(songs));
+  } else {  } else {
+    tabAdd
+    tabAdd.classList.add('active');
+.classList.add('active');
+    tabLibrary.classList.remove('active');    tabLibrary.classList.remove('active');
+    viewLibrary.classList.remove('active
+    viewLibrary.classList.remove('active');
+    view');
+    viewAdd.classList.add('active');
+    viewAdd.style.displayAdd.classList.add('active');
+    viewAdd.style.display = 'flex';
+  }
+ = 'flex';
   }
 }
 
-function showActionSheet(songId, songName) {
-  activeSongId = songId;
-  actionSheetTitle.textContent = songName;
-  actionOverlay.classList.add('active');
-}
+// ---}
 
-function hideActionSheet() {
-  actionOverlay.classList.remove('active');
-  activeSongId = null;
-}
-
-function showRenameModal(currentName) {
-  renameInput.value = currentName;
-  renameOverlay.classList.add('active');
-  setTimeout(() => { renameInput.focus(); renameInput.select(); }, 100);
-}
-
-function hideRenameModal() {
-  renameOverlay.classList.remove('active');
-}
-
-function renderLibrary(songs) {
-  const libraryEl = document.getElementById('library');
-  libraryEl.innerHTML = '';
-  if (songs.length === 0) {
-    libraryEl.innerHTML = '<li style="text-align:center; padding:20px; color:#6e6e73;">No songs imported yet.</li>';
-    return;
-  }
-  songs.forEach(song => {
-    const li = document.createElement('li');
-    li.className = 'song-item';
-    const durationDisplay = song.duration !== null ? secondsToDecimalMMSS(song.duration) : 'Loading...';
-    li.innerHTML = `
-      <div class="song-info">
-        <span class="song-name">${song.name}</span>
-        <span class="song-duration">${durationDisplay}</span>
-      </div>
-    `;
-
-    // 400ms trigger, darker press, vibrate on menu appearance
-    li.addEventListener('touchstart', () => {
-      li.classList.add('pressing');
-      longPressTimer = setTimeout(() => {
-        if (navigator.vibrate) navigator.vibrate(15);
-        li.classList.remove('pressing');
-        showActionSheet(song.id, song.name);
-      }, 400);
-    });
-
-    li.addEventListener('touchend', () => {
-      clearTimeout(longPressTimer);
-      li.classList.remove('pressing');
-    });
-    li.addEventListener('touchcancel', () => {
-      clearTimeout(longPressTimer);
-      li.classList.remove('pressing');
-    });
-    li.addEventListener('touchmove', () => {
-      clearTimeout(longPressTimer);
-      li.classList.remove('pressing');
-    });
-
-    li.addEventListener('click', () => togglePlayback(song.id));
-    libraryEl.appendChild(li);
-  });
-}
-
-async function handleImport(files) {
-  const statusEl = document.getElementById('status');
-  statusEl.textContent = `Importing ${files.length} songs...`;
-  try {
-    const songIds = [];
-    for (let i = 0; i < files.length; i++) {
-      const id = await saveSongBlob(files[i]);
-      songIds.push({ id, file: files[i] });
-      statusEl.textContent = `Saved ${i + 1}/${files.length}`;
-    }
-    const songs = await loadSongs();
-    renderLibrary(songs);
-    statusEl.textContent = 'Extracting metadata...';
-    for (const { id, file } of songIds) {
-      await extractAndUpdateDuration(id, file);
-    }
-    statusEl.textContent = 'Import complete!';
-  } catch (error) {
-    console.error(error);
-    statusEl.textContent = 'Error importing songs.';
-  }
-}
-
-async function initApp() {
-  await initDB();
-
-  playerBar = document.getElementById('player-bar');
-  playerSongName = document.getElementById('player-song-name');
-  playerTimes = document.getElementById('player-times');
-  progressFill = document.getElementById('progress-fill');
-  progressContainer = document.getElementById('progress-container');
-  playPauseBtn = document.getElementById('play-pause-btn');
-  actionOverlay = document.getElementById('action-overlay');
-  actionSheetTitle = document.getElementById('action-sheet-title');
-  actionRename = document.getElementById('action-rename');
-  actionDelete = document.getElementById('action-delete');
-  actionCancel = document.getElementById('action-cancel');
-  renameOverlay = document.getElementById('rename-overlay');
-  renameInput = document.getElementById('rename-input');
-  renameSave = document.getElementById('rename-save');
-  renameCancel = document.getElementById('rename-cancel');
-
-  if (!actionOverlay || !actionRename || !actionDelete) {
-    console.error('[Taktwerk] CRITICAL: Overlay elements not found in DOM!');
-    return;
-  }
-
-  actionCancel.addEventListener('click', hideActionSheet);
-  actionOverlay.addEventListener('click', (e) => { if (e.target === actionOverlay) hideActionSheet(); });
-
-  actionRename.addEventListener('click', async () => {
-    const songId = activeSongId;
-    hideActionSheet();
-    const songs = await loadSongs();
-    const song = songs.find(s => s.id === songId);
-    if (song) showRenameModal(song.name);
-  });
-
-  actionDelete.addEventListener('click', async () => {
-    const songId = activeSongId;
-    hideActionSheet();
-    if (currentSongId == songId) {
-      audioPlayer.pause();
-      playerBar.classList.remove('active');
-      currentSongId = null;
-      updatePlayPauseIcon(false);
-    }
-    await deleteSong(songId);
-    const songs = await loadSongs();
-    renderLibrary(songs);
-  });
-
-  renameCancel.addEventListener('click', hideRenameModal);
-  renameOverlay.addEventListener('click', (e) => { if (e.target === renameOverlay) hideRenameModal(); });
-
-  renameSave.addEventListener('click', async () => {
-    const newName = renameInput.value.trim();
-    if (newName && activeSongId !== null) {
-      await updateSongName(activeSongId, newName);
-      if (currentSongId == activeSongId) {
-        playerSongName.textContent = newName;
-        if ('mediaSession' in navigator) {
-          navigator.mediaSession.metadata = new MediaMetadata({ title: newName, artist: 'Taktwerk', album: 'Local Library' });
-        }
-      }
-      const songs = await loadSongs();
-      renderLibrary(songs);
-    }
-    hideRenameModal();
-  });
-
-  renameInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); renameSave.click(); }
-    if (e.key === 'Escape') hideRenameModal();
-  });
-
-  progressContainer.addEventListener('click', (e) => {
-    if (!audioPlayer.duration) return;
-    const rect = progressContainer.getBoundingClientRect();
-    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    audioPlayer.currentTime = ratio * audioPlayer.duration;
-  });
-
-  playPauseBtn.addEventListener('click', () => {
-    if (currentSongId === null) return;
-    if (audioPlayer.paused) {
-      audioPlayer.play().catch(e => console.error('Playback failed:', e));
-    } else {
-      audioPlayer.pause();
-    }
-  });
-
-  audioPlayer.addEventListener('timeupdate', () => {
-    if (!audioPlayer.duration) return;
-    const elapsed = audioPlayer.currentTime;
-    const remaining = audioPlayer.duration - elapsed;
-    const progress = elapsed / audioPlayer.duration;
-    updatePlayerUI(elapsed, remaining, progress);
-  });
-
-  audioPlayer.addEventListener('play', () => { playerBar.classList.add('active'); updatePlayPauseIcon(true); });
-  audioPlayer.addEventListener('pause', () => { updatePlayPauseIcon(false); });
-  audioPlayer.addEventListener('ended', () => {
-    playerBar.classList.remove('active');
-    currentSongId = null;
-    updatePlayPauseIcon(false);
-    loadSongs().then(songs => renderLibrary(songs));
-  });
-
-  const importBtn = document.getElementById('importBtn');
-  const audioPicker = document.getElementById('audioPicker');
-  importBtn.addEventListener('click', () => audioPicker.click());
-  audioPicker.addEventListener('change', async (e) => {
-    if (e.target.files.length > 0) {
-      await handleImport(Array.from(e.target.files));
-      e.target.value = '';
-    }
-  });
-
-  document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && !audioPlayer.paused && currentSongId) {
-      audioPlayer.play().catch(() => {});
-    }
-  });
-
-  updatePlayPauseIcon(false);
-  const songs = await loadSongs();
-  renderLibrary(songs);
-}
-
-initApp();
+// --- Player UI --- Player UI ---
+function updatePlayer
+function updatePlayerUI(elapsed,UI(elapsed,
