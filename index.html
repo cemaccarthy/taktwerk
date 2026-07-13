@@ -13,81 +13,169 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { 
       font-family: -apple-system, system-ui, sans-serif; 
-      background: #ffffff; 
-      color: #1d1d1f;
+      background: #ffffff; color: #1d1d1f;
       min-height: 100dvh; 
       padding: env(safe-area-inset-top) 16px calc(env(safe-area-inset-bottom) + 160px);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      -webkit-user-select: none;
-      user-select: none;
+      display: flex; flex-direction: column; align-items: center;
+      -webkit-user-select: none; user-select: none;
     }
     h1 { margin-bottom: 16px; }
 
     .tab-bar {
-      display: flex;
-      width: 100%;
-      max-width: 300px;
-      margin-bottom: 20px;
-      border: 2px solid #000000;
-      border-radius: 12px;
-      overflow: hidden;
+      display: flex; width: 100%; max-width: 300px; margin-bottom: 20px;
+      border: 2px solid #000; border-radius: 12px; overflow: hidden;
     }
     .tab-btn {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      padding: 12px;
-      border: none;
-      background: #ffffff;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      color: #1d1d1f;
-      font-family: inherit;
+      flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 12px; border: none; background: #fff; font-size: 14px; font-weight: 600;
+      cursor: pointer; color: #1d1d1f; font-family: inherit;
       transition: background 0.15s ease, color 0.15s ease;
       -webkit-tap-highlight-color: transparent;
     }
-    .tab-btn:first-child { border-right: 2px solid #000000; }
-    .tab-btn.active { background: #007aff; color: #ffffff; }
+    .tab-btn:first-child { border-right: 2px solid #000; }
+    .tab-btn.active { background: #007aff; color: #fff; }
     .tab-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
 
     .view { display: none; width: 100%; max-width: 600px; }
     .view.active { display: block; }
     #view-add.active { display: flex; flex-direction: column; align-items: center; }
 
-    .import-btn {
-      background: #007aff;
-      color: white;
-      border: none;
-      padding: 12px 24px;
-      border-radius: 12px;
-      font-size: 17px;
-      font-weight: 600;
-      cursor: pointer;
-      margin-bottom: 20px;
-      width: 100%;
-      max-width: 300px;
+    /* Piece Form Styles */
+    .piece-form {
+      width: 100%; max-width: 320px;
+      display: flex; flex-direction: column; gap: 0;
     }
-    .import-btn:active { opacity: 0.8; }
+    .form-label {
+      display: block; font-size: 13px; color: #6e6e73;
+      margin-bottom: 4px; margin-top: 14px; font-weight: 500;
+    }
+    .form-label:first-child { margin-top: 0; }
+    .form-input {
+      width: 100%; padding: 10px 12px; font-size: 15px;
+      border: 1px solid #e5e5ea; border-radius: 8px;
+      font-family: inherit; outline: none; background: #fff;
+      -webkit-user-select: text; user-select: text;
+      color: #1d1d1f;
+    }
+    .form-input:focus { border-color: #007aff; }
+    .form-input::placeholder { color: #aeaeb2; }
+    .form-row { display: flex; gap: 8px; }
+    .form-row > div { flex: 1; }
 
+    /* Key Signature Dropdown */
+    .key-sig-wrapper { position: relative; }
+    .key-sig-trigger {
+      width: 100%; padding: 10px 12px; font-size: 15px;
+      border: 1px solid #e5e5ea; border-radius: 8px;
+      background: #fff; color: #1d1d1f; cursor: pointer;
+      text-align: left; font-family: inherit;
+      display: flex; justify-content: space-between; align-items: center;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .key-sig-trigger.placeholder { color: #aeaeb2; }
+    .key-sig-trigger::after { content: '▼'; font-size: 10px; color: #6e6e73; }
+    .key-sig-dropdown {
+      position: fixed; z-index: 10000; background: #fff;
+      border: 1px solid #e5e5ea; border-radius: 10px;
+      max-height: 300px; overflow-y: auto;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+      display: none; flex-direction: column; width: 280px;
+    }
+    .key-sig-dropdown.active { display: flex; }
+    .key-sig-option {
+      padding: 11px 16px; font-size: 14px; cursor: pointer;
+      border-bottom: 1px solid #f5f5f7;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .key-sig-option:last-child { border-bottom: none; }
+    .key-sig-option:active { background: #f5f5f7; }
+    .key-sig-toggle {
+      padding: 11px 16px; font-size: 13px; font-weight: 600;
+      color: #007aff; cursor: pointer; border-top: 1px solid #e5e5ea;
+      background: #fafafa; -webkit-tap-highlight-color: transparent;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .key-sig-toggle:active { background: #f0f7ff; }
+    .key-sig-toggle .arrow { transition: transform 0.15s ease; display: inline-block; }
+    .key-sig-toggle.expanded .arrow { transform: rotate(90deg); }
+    .key-sig-obscure { display: none; }
+    .key-sig-obscure.visible { display: block; }
+
+    /* Catalogue conditional row */
+    .catalogue-row { display: flex; gap: 8px; align-items: flex-start; }
+    .catalogue-row > div:first-child { flex: 1; }
+    .catalogue-row > div:last-child { flex: 1; }
+    .catalogue-select {
+      width: 100%; padding: 10px 12px; font-size: 15px;
+      border: 1px solid #e5e5ea; border-radius: 8px;
+      font-family: inherit; outline: none; background: #fff;
+      color: #1d1d1f; appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236e6e73'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 12px center;
+    }
+    .catalogue-select:focus { border-color: #007aff; }
+
+    /* Save button */
+    .save-btn {
+      margin-top: 24px; padding: 14px 24px;
+      background: #007aff; color: #fff; border: none;
+      border-radius: 12px; font-size: 17px; font-weight: 600;
+      cursor: pointer; width: 100%; font-family: inherit;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .save-btn:active { opacity: 0.8; }
+
+    /* Composer Selector (existing) */
+    .composer-selector-trigger {
+      width: 100%; padding: 10px 12px; border: 1px solid #e5e5ea;
+      border-radius: 8px; background: #fff; font-size: 15px; color: #1d1d1f;
+      cursor: pointer; text-align: left; font-family: inherit;
+      display: flex; justify-content: space-between; align-items: center;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .composer-selector-trigger.placeholder { color: #aeaeb2; }
+    .composer-selector-trigger::after { content: '▼'; font-size: 10px; color: #6e6e73; }
+    .composer-dropdown {
+      position: fixed; z-index: 10000; background: #fff;
+      border: 1px solid #e5e5ea; border-radius: 10px;
+      max-height: 320px; overflow-y: auto;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+      display: none; flex-direction: column;
+    }
+    .composer-dropdown.active { display: flex; }
+    .composer-search {
+      padding: 10px 12px; border-bottom: 1px solid #e5e5ea;
+      position: sticky; top: 0; background: #fff; z-index: 1;
+    }
+    .composer-search input {
+      width: 100%; padding: 8px 10px; font-size: 14px; border: 1px solid #e5e5ea;
+      border-radius: 6px; outline: none; font-family: inherit;
+      -webkit-user-select: text; user-select: text;
+    }
+    .composer-search input:focus { border-color: #007aff; }
+    .composer-list { flex: 1; overflow-y: auto; }
+    .composer-option {
+      padding: 12px 16px; font-size: 15px; cursor: pointer;
+      border-bottom: 1px solid #f5f5f7; -webkit-tap-highlight-color: transparent;
+    }
+    .composer-option:last-child { border-bottom: none; }
+    .composer-option:active { background: #f5f5f7; }
+    .composer-empty { padding: 16px; text-align: center; color: #6e6e73; font-size: 14px; }
+    .composer-add-new {
+      padding: 12px 16px; border-top: 1px solid #e5e5ea;
+      color: #007aff; font-size: 14px; font-weight: 600;
+      cursor: pointer; text-align: center; background: #fafafa;
+      border-radius: 0 0 10px 10px; -webkit-tap-highlight-color: transparent;
+    }
+    .composer-add-new:active { background: #f0f7ff; }
+
+    /* Library & Song Items */
     #library-list { width: 100%; list-style: none; }
     .song-item {
-      background: #f5f5f7;
-      padding: 14px 16px;
-      margin-bottom: 8px;
-      border-radius: 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
-      -webkit-user-select: none;
-      user-select: none;
-      transition: background 0.15s ease;
+      background: #f5f5f7; padding: 14px 16px; margin-bottom: 8px;
+      border-radius: 10px; display: flex; justify-content: space-between; align-items: center;
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+      -webkit-user-select: none; user-select: none; transition: background 0.15s ease;
     }
     .song-item.pressing { background: #c7c7cc; transition: background 0.4s ease; }
     .song-item.menu-open { border-radius: 10px 10px 0 0; margin-bottom: 0; }
@@ -97,28 +185,15 @@
     .status-msg { margin-top: 10px; font-size: 14px; color: #6e6e73; text-align: center; }
 
     .context-menu {
-      background: #ffffff;
-      border: 1px solid #e5e5ea;
-      border-top: none;
-      border-radius: 0 0 10px 10px;
-      margin-top: 0;
-      margin-bottom: 8px;
-      overflow: hidden;
-      animation: slideDown 0.15s ease;
-      width: 100%;
+      background: #fff; border: 1px solid #e5e5ea; border-top: none;
+      border-radius: 0 0 10px 10px; margin-top: 0; margin-bottom: 8px;
+      overflow: hidden; animation: slideDown 0.15s ease; width: 100%;
     }
     @keyframes slideDown { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
     .context-menu button {
-      width: 100%;
-      padding: 14px 16px;
-      border: none;
-      background: none;
-      font-size: 15px;
-      cursor: pointer;
-      text-align: left;
-      font-family: inherit;
-      color: #1d1d1f;
-      border-bottom: 1px solid #f0f0f0;
+      width: 100%; padding: 14px 16px; border: none; background: none;
+      font-size: 15px; cursor: pointer; text-align: left;
+      font-family: inherit; color: #1d1d1f; border-bottom: 1px solid #f0f0f0;
     }
     .context-menu button:last-child { border-bottom: none; }
     .context-menu button:active { background: #f5f5f7; }
@@ -126,263 +201,99 @@
 
     /* Overlays */
     .overlay {
-      position: fixed !important;
-      top: 0 !important;
-      left: 0 !important;
-      right: 0 !important;
-      bottom: 0 !important;
-      background: rgba(0,0,0,0.4);
-      z-index: 9999 !important;
-      display: none;
-      align-items: center;
-      justify-content: center;
+      position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
+      background: rgba(0,0,0,0.4); z-index: 9999 !important;
+      display: none; align-items: center; justify-content: center;
     }
     .overlay.active { display: flex !important; animation: fadeIn 0.2s ease; }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     @keyframes scaleIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-    /* Shared modal styles */
     .modal {
-      background: #ffffff;
-      border-radius: 14px;
-      width: 320px;
-      padding: 24px;
-      animation: scaleIn 0.2s ease;
-      max-height: 85vh;
-      overflow-y: auto;
-      -webkit-user-select: none;
-      user-select: none;
+      background: #fff; border-radius: 14px; width: 320px; padding: 24px;
+      animation: scaleIn 0.2s ease; max-height: 85vh; overflow-y: auto;
+      -webkit-user-select: none; user-select: none;
     }
     .modal h3 { font-size: 17px; margin-bottom: 16px; text-align: center; }
     .modal label { display: block; font-size: 13px; color: #6e6e73; margin-bottom: 4px; margin-top: 12px; }
     .modal label:first-of-type { margin-top: 0; }
     .modal input {
-      width: 100%;
-      padding: 10px;
-      font-size: 16px;
-      border: 1px solid #e5e5ea;
-      border-radius: 8px;
-      font-family: inherit;
-      outline: none;
-      -webkit-user-select: text;
-      user-select: text;
+      width: 100%; padding: 10px; font-size: 16px; border: 1px solid #e5e5ea;
+      border-radius: 8px; font-family: inherit; outline: none;
+      -webkit-user-select: text; user-select: text;
     }
     .modal input:focus { border-color: #007aff; }
     .modal-row { display: flex; gap: 8px; }
     .modal-row > div { flex: 1; }
     .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
     .modal-actions button {
-      padding: 10px 20px;
-      border-radius: 8px;
-      border: none;
-      font-size: 15px;
-      cursor: pointer;
-      font-family: inherit;
-      font-weight: 500;
+      padding: 10px 20px; border-radius: 8px; border: none; font-size: 15px;
+      cursor: pointer; font-family: inherit; font-weight: 500;
     }
     .btn-cancel { background: #f5f5f7; color: #1d1d1f; }
-    .btn-save { background: #007aff; color: #ffffff; }
+    .btn-save { background: #007aff; color: #fff; }
 
-    /* Catalogue section within composer modal */
     .catalogue-section { margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e5ea; }
     .catalogue-section-title { font-size: 13px; color: #6e6e73; margin-bottom: 8px; }
     .catalogue-entry { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; }
     .catalogue-entry input { flex: 1; }
     .catalogue-remove {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      border: none;
-      background: #f5f5f7;
-      color: #6e6e73;
-      font-size: 16px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
+      width: 28px; height: 28px; border-radius: 50%; border: none;
+      background: #f5f5f7; color: #6e6e73; font-size: 16px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
     .catalogue-remove:active { background: #e5e5ea; }
     .add-catalogue-btn {
-      width: 100%;
-      padding: 10px;
-      border: 1px dashed #007aff;
-      border-radius: 8px;
-      background: none;
-      color: #007aff;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      font-family: inherit;
-      margin-top: 4px;
+      width: 100%; padding: 10px; border: 1px dashed #007aff; border-radius: 8px;
+      background: none; color: #007aff; font-size: 14px; font-weight: 500;
+      cursor: pointer; font-family: inherit; margin-top: 4px;
     }
     .add-catalogue-btn:active { background: #f0f7ff; }
 
-    /* Composer Selector Dropdown - FIXED: position:fixed for correct alignment */
-    .composer-selector-trigger {
-      width: 100%;
-      max-width: 300px;
-      padding: 12px 16px;
-      border: 1px solid #e5e5ea;
-      border-radius: 10px;
-      background: #ffffff;
-      font-size: 15px;
-      color: #1d1d1f;
-      cursor: pointer;
-      text-align: left;
-      font-family: inherit;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .composer-selector-trigger.placeholder { color: #6e6e73; }
-    .composer-selector-trigger::after { content: '▼'; font-size: 10px; color: #6e6e73; }
-    .composer-dropdown {
-      position: fixed;
-      z-index: 10000;
-      background: #ffffff;
-      border: 1px solid #e5e5ea;
-      border-radius: 10px;
-      max-height: 320px;
-      overflow-y: auto;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-      display: none;
-      flex-direction: column;
-    }
-    .composer-dropdown.active { display: flex; }
-    .composer-search {
-      padding: 10px 12px;
-      border-bottom: 1px solid #e5e5ea;
-      position: sticky;
-      top: 0;
-      background: #ffffff;
-      z-index: 1;
-    }
-    .composer-search input {
-      width: 100%;
-      padding: 8px 10px;
-      font-size: 14px;
-      border: 1px solid #e5e5ea;
-      border-radius: 6px;
-      outline: none;
-      font-family: inherit;
-      -webkit-user-select: text;
-      user-select: text;
-    }
-    .composer-search input:focus { border-color: #007aff; }
-    .composer-list { flex: 1; overflow-y: auto; }
-    .composer-option {
-      padding: 12px 16px;
-      font-size: 15px;
-      cursor: pointer;
-      border-bottom: 1px solid #f5f5f7;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .composer-option:last-child { border-bottom: none; }
-    .composer-option:active { background: #f5f5f7; }
-    .composer-empty { padding: 16px; text-align: center; color: #6e6e73; font-size: 14px; }
-    .composer-add-new {
-      padding: 12px 16px;
-      border-top: 1px solid #e5e5ea;
-      color: #007aff;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      text-align: center;
-      background: #fafafa;
-      border-radius: 0 0 10px 10px;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .composer-add-new:active { background: #f0f7ff; }
-
-    /* Rename modal */
     .rename-modal {
-      background: #ffffff;
-      border-radius: 14px;
-      width: 300px;
-      padding: 24px;
+      background: #fff; border-radius: 14px; width: 300px; padding: 24px;
       animation: scaleIn 0.2s ease;
     }
     .rename-modal h3 { font-size: 17px; margin-bottom: 4px; }
     .rename-modal input {
-      width: 100%;
-      padding: 10px;
-      font-size: 16px;
-      border: 1px solid #e5e5ea;
-      border-radius: 8px;
-      margin: 12px 0;
-      font-family: inherit;
-      outline: none;
-      -webkit-user-select: text;
-      user-select: text;
+      width: 100%; padding: 10px; font-size: 16px; border: 1px solid #e5e5ea;
+      border-radius: 8px; margin: 12px 0; font-family: inherit; outline: none;
+      -webkit-user-select: text; user-select: text;
     }
     .rename-modal input:focus { border-color: #007aff; }
     .rename-modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
     .rename-modal-actions button {
-      padding: 8px 16px;
-      border-radius: 8px;
-      border: none;
-      font-size: 15px;
-      cursor: pointer;
-      font-family: inherit;
+      padding: 8px 16px; border-radius: 8px; border: none; font-size: 15px;
+      cursor: pointer; font-family: inherit;
     }
 
-    /* Player Bar */
     #player-bar {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: #ffffff;
+      position: fixed; bottom: 0; left: 0; right: 0; background: #fff;
       border-top: 1px solid #e5e5ea;
       padding: 20px 24px calc(20px + env(safe-area-inset-bottom));
-      display: none;
-      flex-direction: column;
-      gap: 14px;
-      z-index: 100;
+      display: none; flex-direction: column; gap: 14px; z-index: 100;
     }
     #player-bar.active { display: flex; }
     .player-song-name {
-      font-weight: 600;
-      font-size: 18px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      text-align: center;
-      width: 100%;
+      font-weight: 600; font-size: 18px; white-space: nowrap; overflow: hidden;
+      text-overflow: ellipsis; text-align: center; width: 100%;
     }
     .player-times { color: #6e6e73; font-variant-numeric: tabular-nums; font-size: 16px; text-align: center; }
     .progress-container {
-      width: 100%;
-      height: 32px;
-      display: flex;
-      align-items: center;
-      cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
+      width: 100%; height: 32px; display: flex; align-items: center;
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
     }
     .progress-track {
-      width: 100%;
-      height: 6px;
-      background: #e5e5ea;
-      border-radius: 3px;
-      position: relative;
-      overflow: hidden;
+      width: 100%; height: 6px; background: #e5e5ea; border-radius: 3px;
+      position: relative; overflow: hidden;
     }
     .progress-fill {
-      height: 100%;
-      background: #007aff;
-      border-radius: 3px;
-      width: 0%;
-      transition: width 0.1s linear;
+      height: 100%; background: #007aff; border-radius: 3px;
+      width: 0%; transition: width 0.1s linear;
     }
     .player-controls { display: flex; justify-content: center; align-items: center; gap: 24px; }
     .control-btn {
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 8px;
+      background: none; border: none; cursor: pointer; padding: 8px;
       -webkit-tap-highlight-color: transparent;
     }
     .control-btn svg { width: 36px; height: 36px; fill: #007aff; }
@@ -408,24 +319,83 @@
   </div>
 
   <div id="view-add" class="view">
-    <!-- Composer Selector -->
-    <div style="position:relative; width:100%; max-width:300px; margin-bottom:12px;">
-      <button id="composer-trigger" class="composer-selector-trigger placeholder">Select Composer</button>
-      <div id="composer-dropdown" class="composer-dropdown">
-        <div id="composer-search-wrap" class="composer-search" style="display:none;">
-          <input type="text" id="composer-search-input" placeholder="Search composers..." autocomplete="off">
-        </div>
-        <div id="composer-list" class="composer-list"></div>
-        <div id="composer-add-new" class="composer-add-new">+ Add New Composer</div>
-      </div>
-    </div>
-    <div id="selected-composer-display" class="status-msg"></div>
+    <div class="piece-form">
+      <!-- 1. Piece Title -->
+      <label class="form-label" for="piece-title">Piece Title *</label>
+      <input type="text" id="piece-title" class="form-input" placeholder="e.g., Symphony No. 5 in C Minor" autocomplete="off">
 
-    <!-- Legacy import (kept for backward compat) -->
-    <input type="file" id="audioPicker" multiple accept=".mp3,.aac,.wav,.aiff,.flac,.alac" style="display:none">
-    <button id="importBtn" class="import-btn" style="display:none;">Select Songs</button>
-    <div id="status" class="status-msg"></div>
-    <div id="add-status" class="status-msg"></div>
+      <!-- 2. Programmatic Title / Subtitle -->
+      <label class="form-label" for="piece-subtitle">Programmatic Title / Subtitle</label>
+      <input type="text" id="piece-subtitle" class="form-input" placeholder="e.g., Fate, Pastoral, Eroica" autocomplete="off">
+
+      <!-- 3. Composer Selector -->
+      <label class="form-label">Composer *</label>
+      <div style="position:relative;">
+        <button id="composer-trigger" class="composer-selector-trigger placeholder">Select Composer</button>
+        <div id="composer-dropdown" class="composer-dropdown">
+          <div id="composer-search-wrap" class="composer-search" style="display:none;">
+            <input type="text" id="composer-search-input" placeholder="Search composers..." autocomplete="off">
+          </div>
+          <div id="composer-list" class="composer-list"></div>
+          <div id="composer-add-new" class="composer-add-new">+ Add New Composer</div>
+        </div>
+      </div>
+
+      <!-- 4. Key Signature -->
+      <label class="form-label">Key Signature</label>
+      <div class="key-sig-wrapper" style="position:relative;">
+        <button id="key-sig-trigger" class="key-sig-trigger placeholder">Select Key Signature</button>
+        <div id="key-sig-dropdown" class="key-sig-dropdown">
+          <div id="key-sig-standard-list"></div>
+          <div id="key-sig-toggle" class="key-sig-toggle">
+            <span class="arrow">▸</span> Obscure or Theoretical Keys
+          </div>
+          <div id="key-sig-obscure-list" class="key-sig-obscure"></div>
+        </div>
+      </div>
+
+      <!-- 5. Opus Number + Piece Number -->
+      <div class="form-row">
+        <div>
+          <label class="form-label" for="opus-number">Opus Number</label>
+          <input type="number" id="opus-number" class="form-input" inputmode="numeric" placeholder="e.g., 67" autocomplete="off">
+        </div>
+        <div>
+          <label class="form-label" for="piece-number">Piece No.</label>
+          <input type="number" id="piece-number" class="form-input" inputmode="numeric" placeholder="e.g., 3" autocomplete="off">
+        </div>
+      </div>
+
+      <!-- 6. Catalogue Reference (conditional) -->
+      <div id="catalogue-field" style="display:none;">
+        <label class="form-label">Catalogue Reference</label>
+        <div class="catalogue-row">
+          <div>
+            <select id="catalogue-select" class="catalogue-select">
+              <option value="">Select catalogue...</option>
+            </select>
+          </div>
+          <div>
+            <input type="number" id="catalogue-number" class="form-input" inputmode="numeric" placeholder="No." autocomplete="off">
+          </div>
+        </div>
+      </div>
+      <div id="catalogue-auto-field" style="display:none;">
+        <label class="form-label">Catalogue Reference</label>
+        <div class="catalogue-row">
+          <div>
+            <input type="text" id="catalogue-auto-name" class="form-input" disabled style="background:#f5f5f7;color:#6e6e73;">
+          </div>
+          <div>
+            <input type="number" id="catalogue-auto-number" class="form-input" inputmode="numeric" placeholder="No." autocomplete="off">
+          </div>
+        </div>
+      </div>
+
+      <!-- Save Button -->
+      <button id="piece-save-btn" class="save-btn">Save</button>
+      <div id="piece-status" class="status-msg"></div>
+    </div>
   </div>
 
   <!-- Composer Creation Modal -->
@@ -439,14 +409,8 @@
       <label for="comp-country">Country of Origin *</label>
       <input type="text" id="comp-country" autocomplete="off">
       <div class="modal-row">
-        <div>
-          <label for="comp-birth">Birth Year *</label>
-          <input type="number" id="comp-birth" inputmode="numeric" autocomplete="off">
-        </div>
-        <div>
-          <label for="comp-death">Death Year *</label>
-          <input type="number" id="comp-death" inputmode="numeric" autocomplete="off">
-        </div>
+        <div><label for="comp-birth">Birth Year *</label><input type="number" id="comp-birth" inputmode="numeric" autocomplete="off"></div>
+        <div><label for="comp-death">Death Year *</label><input type="number" id="comp-death" inputmode="numeric" autocomplete="off"></div>
       </div>
       <div class="catalogue-section">
         <div class="catalogue-section-title">Catalogues (optional)</div>
@@ -477,9 +441,7 @@
     <span class="player-song-name" id="player-song-name"></span>
     <span class="player-times" id="player-times">00:00 / 00:00</span>
     <div class="progress-container" id="progress-container">
-      <div class="progress-track">
-        <div class="progress-fill" id="progress-fill"></div>
-      </div>
+      <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
     </div>
     <div class="player-controls">
       <button class="control-btn" id="play-pause-btn" aria-label="Play/Pause"></button>
@@ -487,10 +449,6 @@
   </div>
   
   <script type="module" src="/taktwerk/app.js"></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/taktwerk/sw.js');
-    }
-  </script>
+  <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/taktwerk/sw.js');</script>
 </body>
 </html>
