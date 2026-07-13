@@ -1,4 +1,4 @@
-// app.js - Action sheet with progressive darkening + rename/delete
+// app.js - Fixed overlay initialization + touch handling
 import { secondsToDecimalMMSS } from '/taktwerk/takt.js';
 
 const DB_NAME = 'TaktwerkDB';
@@ -8,7 +8,7 @@ const STORE_NAME = 'songs';
 let db;
 let currentSongId = null;
 let longPressTimer = null;
-let activeSongId = null; // Song targeted by action sheet
+let activeSongId = null;
 
 const audioPlayer = new Audio();
 audioPlayer.preload = 'auto';
@@ -16,24 +16,10 @@ audioPlayer.preload = 'auto';
 const PLAY_ICON = `<svg viewBox="0 0 24 24" fill="none"><path opacity="0.1" d="M4 5.49683V18.5032C4 20.05 5.68077 21.0113 7.01404 20.227L18.0694 13.7239C19.384 12.9506 19.384 11.0494 18.0694 10.2761L7.01404 3.77296C5.68077 2.98869 4 3.95 4 5.49683Z" fill="currentColor"/><path d="M4 5.49683V18.5032C4 20.05 5.68077 21.0113 7.01404 20.227L18.0694 13.7239C19.384 12.9506 19.384 11.0494 18.0694 10.2761L7.01404 3.77296C5.68077 2.98869 4 3.95 4 5.49683Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const PAUSE_ICON = `<svg viewBox="0 0 24 24" fill="none"><path opacity="0.1" d="M14 19L14 5C14 3.89543 14.8954 3 16 3L17 3C18.1046 3 19 3.89543 19 5L19 19C19 20.1046 18.1046 21 17 21L16 21C14.8954 21 14 20.1046 14 19Z" fill="currentColor"/><path opacity="0.1" d="M10 19L10 5C10 3.89543 9.10457 3 8 3L7 3C5.89543 3 5 3.89543 5 5L5 19C5 20.1046 5.89543 21 7 21L8 21C9.10457 21 10 20.1046 10 19Z" fill="currentColor"/><path d="M14 19L14 5C14 3.89543 14.8954 3 16 3L17 3C18.1046 3 19 3.89543 19 5L19 19C19 20.1046 18.1046 21 17 21L16 21C14.8954 21 14 20.1046 14 19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 19L10 5C10 3.89543 9.10457 3 8 3L7 3C5.89543 3 5 3.89543 5 5L5 19C5 20.1046 5.89543 21 7 21L8 21C9.10457 21 10 20.1046 10 19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
-// DOM References
-const playerBar = document.getElementById('player-bar');
-const playerSongName = document.getElementById('player-song-name');
-const playerTimes = document.getElementById('player-times');
-const progressFill = document.getElementById('progress-fill');
-const progressContainer = document.getElementById('progress-container');
-const playPauseBtn = document.getElementById('play-pause-btn');
-
-// Overlay References
-const actionOverlay = document.getElementById('action-overlay');
-const actionSheetTitle = document.getElementById('action-sheet-title');
-const actionRename = document.getElementById('action-rename');
-const actionDelete = document.getElementById('action-delete');
-const actionCancel = document.getElementById('action-cancel');
-const renameOverlay = document.getElementById('rename-overlay');
-const renameInput = document.getElementById('rename-input');
-const renameSave = document.getElementById('rename-save');
-const renameCancel = document.getElementById('rename-cancel');
+// DOM references assigned in initApp()
+let playerBar, playerSongName, playerTimes, progressFill, progressContainer, playPauseBtn;
+let actionOverlay, actionSheetTitle, actionRename, actionDelete, actionCancel;
+let renameOverlay, renameInput, renameSave, renameCancel;
 
 // --- IndexedDB ---
 async function initDB() {
@@ -130,39 +116,6 @@ function updatePlayPauseIcon(isPlaying) {
   playPauseBtn.setAttribute('aria-label', isPlaying ? 'Pause' : 'Play');
 }
 
-progressContainer.addEventListener('click', (e) => {
-  if (!audioPlayer.duration) return;
-  const rect = progressContainer.getBoundingClientRect();
-  const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-  audioPlayer.currentTime = ratio * audioPlayer.duration;
-});
-
-playPauseBtn.addEventListener('click', () => {
-  if (currentSongId === null) return;
-  if (audioPlayer.paused) {
-    audioPlayer.play().catch(e => console.error('Playback failed:', e));
-  } else {
-    audioPlayer.pause();
-  }
-});
-
-audioPlayer.addEventListener('timeupdate', () => {
-  if (!audioPlayer.duration) return;
-  const elapsed = audioPlayer.currentTime;
-  const remaining = audioPlayer.duration - elapsed;
-  const progress = elapsed / audioPlayer.duration;
-  updatePlayerUI(elapsed, remaining, progress);
-});
-
-audioPlayer.addEventListener('play', () => { playerBar.classList.add('active'); updatePlayPauseIcon(true); });
-audioPlayer.addEventListener('pause', () => { updatePlayPauseIcon(false); });
-audioPlayer.addEventListener('ended', () => {
-  playerBar.classList.remove('active');
-  currentSongId = null;
-  updatePlayPauseIcon(false);
-  loadSongs().then(songs => renderLibrary(songs));
-});
-
 async function playSong(songId) {
   const transaction = db.transaction([STORE_NAME], 'readonly');
   const store = transaction.objectStore(STORE_NAME);
@@ -202,6 +155,7 @@ function togglePlayback(songId) {
 
 // --- Action Sheet & Rename ---
 function showActionSheet(songId, songName) {
+  console.log('[Taktwerk] Showing action sheet for:', songName);
   activeSongId = songId;
   actionSheetTitle.textContent = songName;
   actionOverlay.classList.add('active');
@@ -222,58 +176,6 @@ function hideRenameModal() {
   renameOverlay.classList.remove('active');
 }
 
-// Action sheet button handlers
-actionCancel.addEventListener('click', hideActionSheet);
-actionOverlay.addEventListener('click', (e) => { if (e.target === actionOverlay) hideActionSheet(); });
-
-actionRename.addEventListener('click', async () => {
-  const songId = activeSongId;
-  hideActionSheet();
-  const songs = await loadSongs();
-  const song = songs.find(s => s.id === songId);
-  if (song) showRenameModal(song.name);
-});
-
-actionDelete.addEventListener('click', async () => {
-  const songId = activeSongId;
-  hideActionSheet();
-  if (currentSongId == songId) {
-    audioPlayer.pause();
-    playerBar.classList.remove('active');
-    currentSongId = null;
-    updatePlayPauseIcon(false);
-  }
-  await deleteSong(songId);
-  const songs = await loadSongs();
-  renderLibrary(songs);
-});
-
-// Rename modal handlers
-renameCancel.addEventListener('click', hideRenameModal);
-renameOverlay.addEventListener('click', (e) => { if (e.target === renameOverlay) hideRenameModal(); });
-
-renameSave.addEventListener('click', async () => {
-  const newName = renameInput.value.trim();
-  if (newName && activeSongId !== null) {
-    await updateSongName(activeSongId, newName);
-    // Update player bar if renaming currently playing song
-    if (currentSongId == activeSongId) {
-      playerSongName.textContent = newName;
-      if ('mediaSession' in navigator) {
-        navigator.mediaSession.metadata = new MediaMetadata({ title: newName, artist: 'Taktwerk', album: 'Local Library' });
-      }
-    }
-    const songs = await loadSongs();
-    renderLibrary(songs);
-  }
-  hideRenameModal();
-});
-
-renameInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') { e.preventDefault(); renameSave.click(); }
-  if (e.key === 'Escape') hideRenameModal();
-});
-
 // --- Library Rendering ---
 function renderLibrary(songs) {
   const libraryEl = document.getElementById('library');
@@ -293,14 +195,15 @@ function renderLibrary(songs) {
       </div>
     `;
 
-    // Long press (1500ms) with progressive darkening
+    // Long press (1500ms) with progressive darkening - NO passive flag
     li.addEventListener('touchstart', () => {
       li.classList.add('pressing');
       longPressTimer = setTimeout(() => {
+        console.log('[Taktwerk] Long press triggered for:', song.name);
         li.classList.remove('pressing');
         showActionSheet(song.id, song.name);
       }, 1500);
-    }, { passive: true });
+    });
 
     li.addEventListener('touchend', () => {
       clearTimeout(longPressTimer);
@@ -349,6 +252,116 @@ async function handleImport(files) {
 // --- Init ---
 async function initApp() {
   await initDB();
+
+  // Assign ALL DOM references AFTER DB is ready
+  playerBar = document.getElementById('player-bar');
+  playerSongName = document.getElementById('player-song-name');
+  playerTimes = document.getElementById('player-times');
+  progressFill = document.getElementById('progress-fill');
+  progressContainer = document.getElementById('progress-container');
+  playPauseBtn = document.getElementById('play-pause-btn');
+  actionOverlay = document.getElementById('action-overlay');
+  actionSheetTitle = document.getElementById('action-sheet-title');
+  actionRename = document.getElementById('action-rename');
+  actionDelete = document.getElementById('action-delete');
+  actionCancel = document.getElementById('action-cancel');
+  renameOverlay = document.getElementById('rename-overlay');
+  renameInput = document.getElementById('rename-input');
+  renameSave = document.getElementById('rename-save');
+  renameCancel = document.getElementById('rename-cancel');
+
+  // Verify critical elements exist
+  if (!actionOverlay || !actionRename || !actionDelete) {
+    console.error('[Taktwerk] CRITICAL: Overlay elements not found in DOM!');
+    return;
+  }
+  console.log('[Taktwerk] All DOM elements found successfully');
+
+  // Wire up overlay buttons
+  actionCancel.addEventListener('click', hideActionSheet);
+  actionOverlay.addEventListener('click', (e) => { if (e.target === actionOverlay) hideActionSheet(); });
+
+  actionRename.addEventListener('click', async () => {
+    const songId = activeSongId;
+    hideActionSheet();
+    const songs = await loadSongs();
+    const song = songs.find(s => s.id === songId);
+    if (song) showRenameModal(song.name);
+  });
+
+  actionDelete.addEventListener('click', async () => {
+    const songId = activeSongId;
+    hideActionSheet();
+    if (currentSongId == songId) {
+      audioPlayer.pause();
+      playerBar.classList.remove('active');
+      currentSongId = null;
+      updatePlayPauseIcon(false);
+    }
+    await deleteSong(songId);
+    const songs = await loadSongs();
+    renderLibrary(songs);
+  });
+
+  renameCancel.addEventListener('click', hideRenameModal);
+  renameOverlay.addEventListener('click', (e) => { if (e.target === renameOverlay) hideRenameModal(); });
+
+  renameSave.addEventListener('click', async () => {
+    const newName = renameInput.value.trim();
+    if (newName && activeSongId !== null) {
+      await updateSongName(activeSongId, newName);
+      if (currentSongId == activeSongId) {
+        playerSongName.textContent = newName;
+        if ('mediaSession' in navigator) {
+          navigator.mediaSession.metadata = new MediaMetadata({ title: newName, artist: 'Taktwerk', album: 'Local Library' });
+        }
+      }
+      const songs = await loadSongs();
+      renderLibrary(songs);
+    }
+    hideRenameModal();
+  });
+
+  renameInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); renameSave.click(); }
+    if (e.key === 'Escape') hideRenameModal();
+  });
+
+  // Player controls
+  progressContainer.addEventListener('click', (e) => {
+    if (!audioPlayer.duration) return;
+    const rect = progressContainer.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    audioPlayer.currentTime = ratio * audioPlayer.duration;
+  });
+
+  playPauseBtn.addEventListener('click', () => {
+    if (currentSongId === null) return;
+    if (audioPlayer.paused) {
+      audioPlayer.play().catch(e => console.error('Playback failed:', e));
+    } else {
+      audioPlayer.pause();
+    }
+  });
+
+  audioPlayer.addEventListener('timeupdate', () => {
+    if (!audioPlayer.duration) return;
+    const elapsed = audioPlayer.currentTime;
+    const remaining = audioPlayer.duration - elapsed;
+    const progress = elapsed / audioPlayer.duration;
+    updatePlayerUI(elapsed, remaining, progress);
+  });
+
+  audioPlayer.addEventListener('play', () => { playerBar.classList.add('active'); updatePlayPauseIcon(true); });
+  audioPlayer.addEventListener('pause', () => { updatePlayPauseIcon(false); });
+  audioPlayer.addEventListener('ended', () => {
+    playerBar.classList.remove('active');
+    currentSongId = null;
+    updatePlayPauseIcon(false);
+    loadSongs().then(songs => renderLibrary(songs));
+  });
+
+  // Import
   const importBtn = document.getElementById('importBtn');
   const audioPicker = document.getElementById('audioPicker');
   importBtn.addEventListener('click', () => audioPicker.click());
@@ -359,6 +372,7 @@ async function initApp() {
     }
   });
 
+  // Background resume
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden && !audioPlayer.paused && currentSongId) {
       audioPlayer.play().catch(() => {});
@@ -368,6 +382,7 @@ async function initApp() {
   updatePlayPauseIcon(false);
   const songs = await loadSongs();
   renderLibrary(songs);
+  console.log('[Taktwerk] App initialized successfully');
 }
 
 initApp();
