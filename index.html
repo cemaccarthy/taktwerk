@@ -16,7 +16,7 @@
       background: #ffffff; 
       color: #1d1d1f;
       min-height: 100dvh; 
-      padding: env(safe-area-inset-top) 16px calc(env(safe-area-inset-bottom) + 100px);
+      padding: env(safe-area-inset-top) 16px calc(env(safe-area-inset-bottom) + 160px);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -45,36 +45,23 @@
     }
     .song-item {
       background: #f5f5f7;
-      padding: 12px 16px;
+      padding: 14px 16px;
       margin-bottom: 8px;
       border-radius: 10px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       transition: background 0.05s ease;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
     }
-    .song-item.touching {
-      background: #e8e8ed;
-    }
+    .song-item.touching { background: #e8e8ed; }
     .song-info { display: flex; flex-direction: column; }
     .song-name { font-weight: 500; font-size: 16px; }
     .song-duration { font-size: 13px; color: #6e6e73; margin-top: 2px; }
     .status-msg { margin-top: 10px; font-size: 14px; color: #6e6e73; }
-    
-    .play-btn {
-      background: #007aff;
-      color: white;
-      border: none;
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      font-size: 16px;
-      cursor: pointer;
-      flex-shrink: 0;
-    }
-    .play-btn:active { opacity: 0.8; }
 
-    /* Fixed Player Bar */
+    /* Expanded Player Bar */
     #player-bar {
       position: fixed;
       bottom: 0;
@@ -82,32 +69,34 @@
       right: 0;
       background: #ffffff;
       border-top: 1px solid #e5e5ea;
-      padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+      padding: 20px 24px calc(20px + env(safe-area-inset-bottom));
       display: none;
       flex-direction: column;
-      gap: 8px;
+      gap: 14px;
       z-index: 100;
     }
     #player-bar.active { display: flex; }
 
-    .player-info {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 14px;
-    }
     .player-song-name { 
       font-weight: 600; 
+      font-size: 18px;
       white-space: nowrap; 
       overflow: hidden; 
       text-overflow: ellipsis;
-      max-width: 60%;
+      text-align: center;
+      width: 100%;
     }
-    .player-times { color: #6e6e73; font-variant-numeric: tabular-nums; }
+    .player-times { 
+      color: #6e6e73; 
+      font-variant-numeric: tabular-nums; 
+      font-size: 16px;
+      text-align: center;
+    }
 
+    /* Progress Bar */
     .progress-container {
       width: 100%;
-      height: 28px;
+      height: 32px;
       display: flex;
       align-items: center;
       cursor: pointer;
@@ -115,19 +104,40 @@
     }
     .progress-track {
       width: 100%;
-      height: 4px;
+      height: 6px;
       background: #e5e5ea;
-      border-radius: 2px;
+      border-radius: 3px;
       position: relative;
       overflow: hidden;
     }
     .progress-fill {
       height: 100%;
       background: #007aff;
-      border-radius: 2px;
+      border-radius: 3px;
       width: 0%;
       transition: width 0.1s linear;
     }
+
+    /* SVG Controls */
+    .player-controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 24px;
+    }
+    .control-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .control-btn svg {
+      width: 36px;
+      height: 36px;
+      fill: #007aff;
+    }
+    .control-btn:active svg { opacity: 0.6; }
   </style>
 </head>
 <body>
@@ -142,15 +152,19 @@
   
   <ul id="library"></ul>
 
+  <!-- Expanded Player Bar -->
   <div id="player-bar">
-    <div class="player-info">
-      <span class="player-song-name" id="player-song-name"></span>
-      <span class="player-times" id="player-times">00:00 / 00:00</span>
-    </div>
+    <span class="player-song-name" id="player-song-name"></span>
+    <span class="player-times" id="player-times">00:00 / 00:00</span>
     <div class="progress-container" id="progress-container">
       <div class="progress-track">
         <div class="progress-fill" id="progress-fill"></div>
       </div>
+    </div>
+    <div class="player-controls">
+      <button class="control-btn" id="play-pause-btn" aria-label="Play/Pause">
+        <!-- SVG injected by JS -->
+      </button>
     </div>
   </div>
   
