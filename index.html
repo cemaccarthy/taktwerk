@@ -151,3 +151,12 @@
       </div>
     </div>
   </div>
+  
+  <script type="module" src="/taktwerk/app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/taktwerk/sw.js');
+    }
+  </script>
+</body>
+</html>
