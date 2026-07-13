@@ -1,4 +1,4 @@
-// app.js - Fixed instant tab switching
+// app.js - Inline context menu replacing overlay action sheet
 import { secondsToDecimalMMSS } from '/taktwerk/takt.js';
 
 const DB_NAME = 'TaktwerkDB';
@@ -8,7 +8,7 @@ const STORE_NAME = 'songs';
 let db;
 let currentSongId = null;
 let longPressTimer = null;
-let activeSongId = null;
+let activeContextMenu = null; // Tracks currently open inline menu
 
 const audioPlayer = new Audio();
 audioPlayer.preload = 'auto';
@@ -17,7 +17,6 @@ const PLAY_ICON = `<svg viewBox="0 0 24 24" fill="none"><path opacity="0.1" d="M
 const PAUSE_ICON = `<svg viewBox="0 0 24 24" fill="none"><path opacity="0.1" d="M14 19L14 5C14 3.89543 14.8954 3 16 3L17 3C18.1046 3 19 3.89543 19 5L19 19C19 20.1046 18.1046 21 17 21L16 21C14.8954 21 14 20.1046 14 19Z" fill="currentColor"/><path opacity="0.1" d="M10 19L10 5C10 3.89543 9.10457 3 8 3L7 3C5.89543 3 5 3.89543 5 5L5 19C5 20.1046 5.89543 21 7 21L8 21C9.10457 21 10 20.1046 10 19Z" fill="currentColor"/><path d="M14 19L14 5C14 3.89543 14.8954 3 16 3L17 3C18.1046 3 19 3.89543 19 5L19 19C19 20.1046 18.1046 21 17 21L16 21C14.8954 21 14 20.1046 14 19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 19L10 5C10 3.89543 9.10457 3 8 3L7 3C5.89543 3 5 3.89543 5 5L5 19C5 20.1046 5.89543 21 7 21L8 21C9.10457 21 10 20.1046 10 19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
 let playerBar, playerSongName, playerTimes, progressFill, progressContainer, playPauseBtn;
-let actionOverlay, actionSheetTitle, actionRename, actionDelete, actionCancel;
 let renameOverlay, renameInput, renameSave, renameCancel;
 let tabLibrary, tabAdd, viewLibrary, viewAdd;
 
@@ -104,7 +103,6 @@ async function loadSongs() {
   });
 }
 
-// Pure CSS class toggling only — no inline style manipulation
 function switchTab(tab) {
   if (tab === 'library') {
     tabLibrary.classList.add('active');
@@ -167,18 +165,67 @@ function togglePlayback(songId) {
   }
 }
 
-function showActionSheet(songId, songName) {
-  activeSongId = songId;
-  actionSheetTitle.textContent = songName;
-  actionOverlay.classList.add('active');
+// --- Inline Context Menu ---
+function dismissContextMenu() {
+  if (activeContextMenu) {
+    activeContextMenu.remove();
+    activeContextMenu = null;
+  }
+  // Remove menu-open class from all song items
+  document.querySelectorAll('.song-item.menu-open').forEach(el => el.classList.remove('menu-open'));
 }
 
-function hideActionSheet() {
-  actionOverlay.classList.remove('active');
-  activeSongId = null;
+function showContextMenu(songId, songName, songElement) {
+  // Dismiss any existing menu first
+  dismissContextMenu();
+
+  // Mark song as having menu open (adjusts border radius)
+  songElement.classList.add('menu-open');
+
+  // Create inline menu
+  const menu = document.createElement('div');
+  menu.className = 'context-menu';
+  menu.innerHTML = `
+    <button data-action="rename">Rename</button>
+    <button data-action="delete" class="btn-danger">Delete</button>
+  `;
+
+  // Insert menu directly after the song item in the DOM
+  songElement.parentNode.insertBefore(menu, songElement.nextSibling);
+  activeContextMenu = menu;
+
+  // Handle menu button clicks
+  menu.querySelector('[data-action="rename"]').addEventListener('click', async () => {
+    dismissContextMenu();
+    showRenameModal(songId, songName);
+  });
+
+  menu.querySelector('[data-action="delete"]').addEventListener('click', async () => {
+    dismissContextMenu();
+    if (currentSongId == songId) {
+      audioPlayer.pause();
+      playerBar.classList.remove('active');
+      currentSongId = null;
+      updatePlayPauseIcon(false);
+    }
+    await deleteSong(songId);
+    const songs = await loadSongs();
+    renderLibrary(songs);
+  });
 }
 
-function showRenameModal(currentName) {
+// Dismiss menu when tapping anywhere outside
+document.addEventListener('click', (e) => {
+  if (activeContextMenu && !activeContextMenu.contains(e.target) && !e.target.closest('.song-item')) {
+    dismissContextMenu();
+  }
+});
+
+// --- Rename Modal ---
+let renameTargetId = null;
+
+function showRenameModal(songId, currentName) {
+  renameTargetId = songId;
   renameInput.value = currentName;
   renameOverlay.classList.add('active');
   setTimeout(() => { renameInput.focus(); renameInput.select(); }, 100);
@@ -186,8 +233,10 @@ function showRenameModal(currentName) {
 
 function hideRenameModal() {
   renameOverlay.classList.remove('active');
+  renameTargetId = null;
 }
 
+// --- Library Rendering ---
 function renderLibrary(songs) {
   const libraryEl = document.getElementById('library-list');
   libraryEl.innerHTML = '';
@@ -206,12 +255,13 @@ function renderLibrary(songs) {
       </div>
     `;
 
+    // Long press shows inline context menu
     li.addEventListener('touchstart', () => {
       li.classList.add('pressing');
       longPressTimer = setTimeout(() => {
         if (navigator.vibrate) navigator.vibrate(15);
         li.classList.remove('pressing');
-        showActionSheet(song.id, song.name);
+        showContextMenu(song.id, song.name, li);
       }, 400);
     });
 
@@ -219,7 +269,12 @@ function renderLibrary(songs) {
     li.addEventListener('touchcancel', () => { clearTimeout(longPressTimer); li.classList.remove('pressing'); });
     li.addEventListener('touchmove', () => { clearTimeout(longPressTimer); li.classList.remove('pressing'); });
 
-    li.addEventListener('click', () => togglePlayback(song.id));
+    // Normal tap plays (unless context menu is open on this item)
+    li.addEventListener('click', () => {
+      if (activeContextMenu && li.classList.contains('menu-open')) return;
+      togglePlayback(song.id);
+    });
+
     libraryEl.appendChild(li);
   });
 }
@@ -255,11 +310,6 @@ async function initApp() {
   progressFill = document.getElementById('progress-fill');
   progressContainer = document.getElementById('progress-container');
   playPauseBtn = document.getElementById('play-pause-btn');
-  actionOverlay = document.getElementById('action-overlay');
-  actionSheetTitle = document.getElementById('action-sheet-title');
-  actionRename = document.getElementById('action-rename');
-  actionDelete = document.getElementById('action-delete');
-  actionCancel = document.getElementById('action-cancel');
   renameOverlay = document.getElementById('rename-overlay');
   renameInput = document.getElementById('rename-input');
   renameSave = document.getElementById('rename-save');
@@ -269,54 +319,19 @@ async function initApp() {
   viewLibrary = document.getElementById('view-library');
   viewAdd = document.getElementById('view-add');
 
-  if (!actionOverlay || !actionRename || !actionDelete) {
-    console.error('[Taktwerk] CRITICAL: Overlay elements not found in DOM!');
-    return;
-  }
+  // Tab switching
+  tabLibrary.addEventListener('click', (e) => { e.stopPropagation(); switchTab('library'); });
+  tabAdd.addEventListener('click', (e) => { e.stopPropagation(); switchTab('add'); });
 
-  // Instant click handlers with stopPropagation to prevent touch interference
-  tabLibrary.addEventListener('click', (e) => {
-    e.stopPropagation();
-    switchTab('library');
-  });
-  tabAdd.addEventListener('click', (e) => {
-    e.stopPropagation();
-    switchTab('add');
-  });
-
-  actionCancel.addEventListener('click', hideActionSheet);
-  actionOverlay.addEventListener('click', (e) => { if (e.target === actionOverlay) hideActionSheet(); });
-
-  actionRename.addEventListener('click', async () => {
-    const songId = activeSongId;
-    hideActionSheet();
-    const songs = await loadSongs();
-    const song = songs.find(s => s.id === songId);
-    if (song) showRenameModal(song.name);
-  });
-
-  actionDelete.addEventListener('click', async () => {
-    const songId = activeSongId;
-    hideActionSheet();
-    if (currentSongId == songId) {
-      audioPlayer.pause();
-      playerBar.classList.remove('active');
-      currentSongId = null;
-      updatePlayPauseIcon(false);
-    }
-    await deleteSong(songId);
-    const songs = await loadSongs();
-    renderLibrary(songs);
-  });
-
+  // Rename modal handlers
   renameCancel.addEventListener('click', hideRenameModal);
   renameOverlay.addEventListener('click', (e) => { if (e.target === renameOverlay) hideRenameModal(); });
 
   renameSave.addEventListener('click', async () => {
     const newName = renameInput.value.trim();
-    if (newName && activeSongId !== null) {
-      await updateSongName(activeSongId, newName);
-      if (currentSongId == activeSongId) {
+    if (newName && renameTargetId !== null) {
+      await updateSongName(renameTargetId, newName);
+      if (currentSongId == renameTargetId) {
         playerSongName.textContent = newName;
         if ('mediaSession' in navigator) {
           navigator.mediaSession.metadata = new MediaMetadata({ title: newName, artist: 'Taktwerk', album: 'Local Library' });
@@ -333,6 +348,7 @@ async function initApp() {
     if (e.key === 'Escape') hideRenameModal();
   });
 
+  // Player controls
   progressContainer.addEventListener('click', (e) => {
     if (!audioPlayer.duration) return;
     const rect = progressContainer.getBoundingClientRect();
@@ -366,6 +382,7 @@ async function initApp() {
     loadSongs().then(songs => renderLibrary(songs));
   });
 
+  // Import
   const importBtn = document.getElementById('importBtn');
   const audioPicker = document.getElementById('audioPicker');
   importBtn.addEventListener('click', () => audioPicker.click());
@@ -376,6 +393,7 @@ async function initApp() {
     }
   });
 
+  // Background resume
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden && !audioPlayer.paused && currentSongId) {
       audioPlayer.play().catch(() => {});
