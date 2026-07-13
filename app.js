@@ -1,4 +1,4 @@
-// app.js - Main application logic
+// app.js - Main application logic with playback
 import { secondsToDecimalMMSS } from '/taktwerk/takt.js';
 
 const DB_NAME = 'TaktwerkDB';
@@ -6,6 +6,11 @@ const DB_VERSION = 1;
 const STORE_NAME = 'songs';
 
 let db;
+let currentSongId = null;
+
+// Single reusable audio element for iOS background audio support
+const audioPlayer = new Audio();
+audioPlayer.preload = 'auto';
 
 // Initialize IndexedDB
 async function initDB() {
@@ -28,7 +33,7 @@ async function initDB() {
   });
 }
 
-// Save song blob immediately (no metadata wait)
+// Save song blob immediately
 async function saveSongBlob(file) {
   return new Promise((resolve, reject) => {
     const transaction = db.transaction([STORE_NAME], 'readwrite');
@@ -37,7 +42,7 @@ async function saveSongBlob(file) {
     const songData = {
       name: file.name,
       blob: file,
-      duration: null, // Will be updated async
+      duration: null,
       addedAt: Date.now()
     };
     
@@ -47,13 +52,13 @@ async function saveSongBlob(file) {
   });
 }
 
-// Extract duration and update existing record
+// Extract duration and update record
 async function extractAndUpdateDuration(songId, file) {
   try {
     const tempAudio = new Audio();
     tempAudio.src = URL.createObjectURL(file);
     
-    await new Promise((resolve, reject) => {
+    const duration = await new Promise((resolve, reject) => {
       tempAudio.onloadedmetadata = () => {
         URL.revokeObjectURL(tempAudio.src);
         resolve(tempAudio.duration);
@@ -62,22 +67,20 @@ async function extractAndUpdateDuration(songId, file) {
         URL.revokeObjectURL(tempAudio.src);
         reject(new Error('Metadata load failed'));
       };
-    }).then(duration => {
-      // Update the record with actual duration
-      const transaction = db.transaction([STORE_NAME], 'readwrite');
-      const store = transaction.objectStore(STORE_NAME);
-      const getRequest = store.get(songId);
-      
-      getRequest.onsuccess = () => {
-        const song = getRequest.result;
-        if (song) {
-          song.duration = duration;
-          store.put(song);
-        }
-      };
     });
     
-    // Re-render to show updated duration
+    const transaction = db.transaction([STORE_NAME], 'readwrite');
+    const store = transaction.objectStore(STORE_NAME);
+    const getRequest = store.get(songId);
+    
+    getRequest.onsuccess = () => {
+      const song = getRequest.result;
+      if (song) {
+        song.duration = duration;
+        store.put(song);
+      }
+    };
+    
     const songs = await loadSongs();
     renderLibrary(songs);
   } catch (e) {
@@ -85,7 +88,7 @@ async function extractAndUpdateDuration(songId, file) {
   }
 }
 
-// Load all songs from IndexedDB
+// Load all songs
 async function loadSongs() {
   return new Promise((resolve, reject) => {
     const transaction = db.transaction([STORE_NAME], 'readonly');
@@ -97,7 +100,41 @@ async function loadSongs() {
   });
 }
 
-// Render library list
+// Play song by ID
+async function playSong(songId) {
+  const transaction = db.transaction([STORE_NAME], 'readonly');
+  const store = transaction.objectStore(STORE_NAME);
+  const request = store.get(songId);
+  
+  request.onsuccess = () => {
+    const song = request.result;
+    if (song && song.blob) {
+      // Revoke previous blob URL to prevent memory leaks
+      if (audioPlayer.src) URL.revokeObjectURL(audioPlayer.src);
+      
+      audioPlayer.src = URL.createObjectURL(song.blob);
+      audioPlayer.play().catch(e => console.error('Playback failed:', e));
+      currentSongId = songId;
+      
+      // Update UI to show playing state
+      document.querySelectorAll('.play-btn').forEach(btn => {
+        btn.textContent = btn.dataset.id == songId ? '⏸' : '▶';
+      });
+    }
+  };
+}
+
+// Toggle play/pause
+function togglePlayback(songId) {
+  if (currentSongId == songId && !audioPlayer.paused) {
+    audioPlayer.pause();
+    document.querySelector(`.play-btn[data-id="${songId}"]`).textContent = '▶';
+  } else {
+    playSong(songId);
+  }
+}
+
+// Render library with play buttons
 function renderLibrary(songs) {
   const libraryEl = document.getElementById('library');
   libraryEl.innerHTML = '';
@@ -114,12 +151,21 @@ function renderLibrary(songs) {
       ? secondsToDecimalMMSS(song.duration) 
       : 'Loading...';
     
+    const isPlaying = currentSongId == song.id && !audioPlayer.paused;
+    
     li.innerHTML = `
       <div class="song-info">
         <span class="song-name">${song.name}</span>
         <span class="song-duration">${durationDisplay}</span>
       </div>
+      <button class="play-btn" data-id="${song.id}">${isPlaying ? '⏸' : '▶'}</button>
     `;
+    
+    li.querySelector('.play-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      togglePlayback(song.id);
+    });
+    
     libraryEl.appendChild(li);
   });
 }
@@ -132,19 +178,16 @@ async function handleImport(files) {
   try {
     const songIds = [];
     
-    // Phase 1: Save all blobs immediately
     for (let i = 0; i < files.length; i++) {
       const id = await saveSongBlob(files[i]);
       songIds.push({ id, file: files[i] });
       statusEl.textContent = `Saved ${i + 1}/${files.length}`;
     }
     
-    // Show library immediately
     const songs = await loadSongs();
     renderLibrary(songs);
     statusEl.textContent = 'Extracting metadata...';
     
-    // Phase 2: Extract metadata in background
     for (const { id, file } of songIds) {
       await extractAndUpdateDuration(id, file);
     }
@@ -163,9 +206,7 @@ async function initApp() {
   const importBtn = document.getElementById('importBtn');
   const audioPicker = document.getElementById('audioPicker');
   
-  importBtn.addEventListener('click', () => {
-    audioPicker.click();
-  });
+  importBtn.addEventListener('click', () => audioPicker.click());
   
   audioPicker.addEventListener('change', async (e) => {
     if (e.target.files.length > 0) {
@@ -174,7 +215,6 @@ async function initApp() {
     }
   });
   
-  // Load existing library
   const songs = await loadSongs();
   renderLibrary(songs);
 }
