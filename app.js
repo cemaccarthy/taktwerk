@@ -1,5 +1,5 @@
-// app.js - Main application logic
-import { secondsToDecimalMMSS } from './takt.js';
+import { secondsToDecimalMMSS } from '/taktwerk/takt.js';
+
 
 const DB_NAME = 'TaktwerkDB';
 const DB_VERSION = 1;
