@@ -1,5 +1,5 @@
+// app.js - Main application logic
 import { secondsToDecimalMMSS } from '/taktwerk/takt.js';
-
 
 const DB_NAME = 'TaktwerkDB';
 const DB_VERSION = 1;
@@ -28,37 +28,61 @@ async function initDB() {
   });
 }
 
-// Save song to IndexedDB
-async function saveSong(file) {
+// Save song blob immediately (no metadata wait)
+async function saveSongBlob(file) {
   return new Promise((resolve, reject) => {
     const transaction = db.transaction([STORE_NAME], 'readwrite');
     const store = transaction.objectStore(STORE_NAME);
     
-    // Extract duration using a temporary audio element
+    const songData = {
+      name: file.name,
+      blob: file,
+      duration: null, // Will be updated async
+      addedAt: Date.now()
+    };
+    
+    const addRequest = store.add(songData);
+    addRequest.onsuccess = () => resolve(addRequest.result);
+    addRequest.onerror = () => reject(addRequest.error);
+  });
+}
+
+// Extract duration and update existing record
+async function extractAndUpdateDuration(songId, file) {
+  try {
     const tempAudio = new Audio();
     tempAudio.src = URL.createObjectURL(file);
     
-    tempAudio.onloadedmetadata = () => {
-      const duration = tempAudio.duration;
-      URL.revokeObjectURL(tempAudio.src); // Clean up
-      
-      const songData = {
-        name: file.name,
-        blob: file, // Store the actual file blob
-        duration: duration,
-        addedAt: Date.now()
+    await new Promise((resolve, reject) => {
+      tempAudio.onloadedmetadata = () => {
+        URL.revokeObjectURL(tempAudio.src);
+        resolve(tempAudio.duration);
       };
+      tempAudio.onerror = () => {
+        URL.revokeObjectURL(tempAudio.src);
+        reject(new Error('Metadata load failed'));
+      };
+    }).then(duration => {
+      // Update the record with actual duration
+      const transaction = db.transaction([STORE_NAME], 'readwrite');
+      const store = transaction.objectStore(STORE_NAME);
+      const getRequest = store.get(songId);
       
-      const addRequest = store.add(songData);
-      addRequest.onsuccess = () => resolve(addRequest.result);
-      addRequest.onerror = () => reject(addRequest.error);
-    };
+      getRequest.onsuccess = () => {
+        const song = getRequest.result;
+        if (song) {
+          song.duration = duration;
+          store.put(song);
+        }
+      };
+    });
     
-    tempAudio.onerror = () => {
-      URL.revokeObjectURL(tempAudio.src);
-      reject(new Error('Failed to load audio metadata'));
-    };
-  });
+    // Re-render to show updated duration
+    const songs = await loadSongs();
+    renderLibrary(songs);
+  } catch (e) {
+    console.warn(`Could not extract duration for ${file.name}:`, e);
+  }
 }
 
 // Load all songs from IndexedDB
@@ -86,10 +110,14 @@ function renderLibrary(songs) {
   songs.forEach(song => {
     const li = document.createElement('li');
     li.className = 'song-item';
+    const durationDisplay = song.duration !== null 
+      ? secondsToDecimalMMSS(song.duration) 
+      : 'Loading...';
+    
     li.innerHTML = `
       <div class="song-info">
         <span class="song-name">${song.name}</span>
-        <span class="song-duration">${secondsToDecimalMMSS(song.duration)}</span>
+        <span class="song-duration">${durationDisplay}</span>
       </div>
     `;
     libraryEl.appendChild(li);
@@ -102,14 +130,26 @@ async function handleImport(files) {
   statusEl.textContent = `Importing ${files.length} songs...`;
   
   try {
+    const songIds = [];
+    
+    // Phase 1: Save all blobs immediately
     for (let i = 0; i < files.length; i++) {
-      await saveSong(files[i]);
-      statusEl.textContent = `Imported ${i + 1}/${files.length}`;
+      const id = await saveSongBlob(files[i]);
+      songIds.push({ id, file: files[i] });
+      statusEl.textContent = `Saved ${i + 1}/${files.length}`;
+    }
+    
+    // Show library immediately
+    const songs = await loadSongs();
+    renderLibrary(songs);
+    statusEl.textContent = 'Extracting metadata...';
+    
+    // Phase 2: Extract metadata in background
+    for (const { id, file } of songIds) {
+      await extractAndUpdateDuration(id, file);
     }
     
     statusEl.textContent = 'Import complete!';
-    const songs = await loadSongs();
-    renderLibrary(songs);
   } catch (error) {
     console.error(error);
     statusEl.textContent = 'Error importing songs.';
@@ -123,16 +163,14 @@ async function initApp() {
   const importBtn = document.getElementById('importBtn');
   const audioPicker = document.getElementById('audioPicker');
   
-  // Trigger file picker
   importBtn.addEventListener('click', () => {
     audioPicker.click();
   });
   
-  // Handle file selection
   audioPicker.addEventListener('change', async (e) => {
     if (e.target.files.length > 0) {
       await handleImport(Array.from(e.target.files));
-      e.target.value = ''; // Reset input
+      e.target.value = '';
     }
   });
   
