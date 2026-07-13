@@ -1,4 +1,5 @@
-// app.js - Main application import { secondsToDecimalMMSS } from '/taktwerk/takt.js';
+// app.js - Main application logic with playback + decimal progress
+import { secondsToDecimalMMSS } from '/taktwerk/takt.js';
 
 const DB_NAME = 'TaktwerkDB';
 const DB_VERSION = 1;
@@ -96,13 +97,12 @@ audioPlayer.addEventListener('timeupdate', () => {
   updatePlayerUI(elapsed, remaining, progress);
 });
 
-// Show/hide player bar on play/end
+// Show/hide player bar on play/end (FIXED: no async)
 audioPlayer.addEventListener('play', () => playerBar.classList.add('active'));
-audioPlayer.addEventListener('ended', async () => {
+audioPlayer.addEventListener('ended', () => {
   playerBar.classList.remove('active');
   currentSongId = null;
-  const songs = await loadSongs();
-  renderLibrary(songs);
+  loadSongs().then(songs => renderLibrary(songs));
 });
 
 async function playSong(songId) {
