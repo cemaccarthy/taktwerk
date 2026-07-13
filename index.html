@@ -56,10 +56,23 @@
       -webkit-tap-highlight-color: transparent;
     }
     .song-item.touching { background: #e8e8ed; }
-    .song-info { display: flex; flex-direction: column; }
+    .song-info { display: flex; flex-direction: column; flex: 1; min-width: 0; }
     .song-name { font-weight: 500; font-size: 16px; }
     .song-duration { font-size: 13px; color: #6e6e73; margin-top: 2px; }
     .status-msg { margin-top: 10px; font-size: 14px; color: #6e6e73; }
+
+    /* Rename Input */
+    .rename-input {
+      font-size: 16px;
+      font-weight: 500;
+      border: none;
+      background: #ffffff;
+      padding: 2px 4px;
+      border-radius: 4px;
+      width: 100%;
+      outline: 2px solid #007aff;
+      font-family: inherit;
+    }
 
     /* Expanded Player Bar */
     #player-bar {
@@ -93,7 +106,6 @@
       text-align: center;
     }
 
-    /* Progress Bar */
     .progress-container {
       width: 100%;
       height: 32px;
@@ -118,7 +130,6 @@
       transition: width 0.1s linear;
     }
 
-    /* SVG Controls */
     .player-controls {
       display: flex;
       justify-content: center;
@@ -152,7 +163,6 @@
   
   <ul id="library"></ul>
 
-  <!-- Expanded Player Bar -->
   <div id="player-bar">
     <span class="player-song-name" id="player-song-name"></span>
     <span class="player-times" id="player-times">00:00 / 00:00</span>
@@ -162,9 +172,7 @@
       </div>
     </div>
     <div class="player-controls">
-      <button class="control-btn" id="play-pause-btn" aria-label="Play/Pause">
-        <!-- SVG injected by JS -->
-      </button>
+      <button class="control-btn" id="play-pause-btn" aria-label="Play/Pause"></button>
     </div>
   </div>
   
