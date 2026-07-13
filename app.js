@@ -1,4 +1,4 @@
-// app.js - Main application logic with playback + decimal progress + iOS polish + touch highlight
+// app.js - Expanded player with custom SVG controls
 import { secondsToDecimalMMSS } from '/taktwerk/takt.js';
 
 const DB_NAME = 'TaktwerkDB';
@@ -11,12 +11,28 @@ let currentSongId = null;
 const audioPlayer = new Audio();
 audioPlayer.preload = 'auto';
 
+// Optimized Custom SVG Icons (currentColor inherits #007aff from CSS)
+const PLAY_ICON = `<svg viewBox="0 0 24 24" fill="none">
+  <path opacity="0.1" d="M4 5.49683V18.5032C4 20.05 5.68077 21.0113 7.01404 20.227L18.0694 13.7239C19.384 12.9506 19.384 11.0494 18.0694 10.2761L7.01404 3.77296C5.68077 2.98869 4 3.95 4 5.49683Z" fill="currentColor"/>
+  <path d="M4 5.49683V18.5032C4 20.05 5.68077 21.0113 7.01404 20.227L18.0694 13.7239C19.384 12.9506 19.384 11.0494 18.0694 10.2761L7.01404 3.77296C5.68077 2.98869 4 3.95 4 5.49683Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+
+const PAUSE_ICON = `<svg viewBox="0 0 24 24" fill="none">
+  <path opacity="0.1" d="M14 19L14 5C14 3.89543 14.8954 3 16 3L17 3C18.1046 3 19 3.89543 19 5L19 19C19 20.1046 18.1046 21 17 21L16 21C14.8954 21 14 20.1046 14 19Z" fill="currentColor"/>
+  <path opacity="0.1" d="M10 19L10 5C10 3.89543 9.10457 3 8 3L7 3C5.89543 3 5 3.89543 5 5L5 19C5 20.1046 5.89543 21 7 21L8 21C9.10457 21 10 20.1046 10 19Z" fill="currentColor"/>
+  <path d="M14 19L14 5C14 3.89543 14.8954 3 16 3L17 3C18.1046 3 19 3.89543 19 5L19 19C19 20.1046 18.1046 21 17 21L16 21C14.8954 21 14 20.1046 14 19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M10 19L10 5C10 3.89543 9.10457 3 8 3L7 3C5.89543 3 5 3.89543 5 5L5 19C5 20.1046 5.89543 21 7 21L8 21C9.10457 21 10 20.1046 10 19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+
+// DOM References
 const playerBar = document.getElementById('player-bar');
 const playerSongName = document.getElementById('player-song-name');
 const playerTimes = document.getElementById('player-times');
 const progressFill = document.getElementById('progress-fill');
 const progressContainer = document.getElementById('progress-container');
+const playPauseBtn = document.getElementById('play-pause-btn');
 
+// Initialize IndexedDB
 async function initDB() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -77,11 +93,25 @@ function updatePlayerUI(elapsed, remaining, progress) {
   progressFill.style.width = `${(progress * 100).toFixed(2)}%`;
 }
 
+function updatePlayPauseIcon(isPlaying) {
+  playPauseBtn.innerHTML = isPlaying ? PAUSE_ICON : PLAY_ICON;
+  playPauseBtn.setAttribute('aria-label', isPlaying ? 'Pause' : 'Play');
+}
+
 progressContainer.addEventListener('click', (e) => {
   if (!audioPlayer.duration) return;
   const rect = progressContainer.getBoundingClientRect();
   const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
   audioPlayer.currentTime = ratio * audioPlayer.duration;
+});
+
+playPauseBtn.addEventListener('click', () => {
+  if (currentSongId === null) return;
+  if (audioPlayer.paused) {
+    audioPlayer.play().catch(e => console.error('Playback failed:', e));
+  } else {
+    audioPlayer.pause();
+  }
 });
 
 audioPlayer.addEventListener('timeupdate', () => {
@@ -92,10 +122,17 @@ audioPlayer.addEventListener('timeupdate', () => {
   updatePlayerUI(elapsed, remaining, progress);
 });
 
-audioPlayer.addEventListener('play', () => playerBar.classList.add('active'));
+audioPlayer.addEventListener('play', () => {
+  playerBar.classList.add('active');
+  updatePlayPauseIcon(true);
+});
+audioPlayer.addEventListener('pause', () => {
+  updatePlayPauseIcon(false);
+});
 audioPlayer.addEventListener('ended', () => {
   playerBar.classList.remove('active');
   currentSongId = null;
+  updatePlayPauseIcon(false);
   loadSongs().then(songs => renderLibrary(songs));
 });
 
@@ -112,9 +149,7 @@ async function playSong(songId) {
       currentSongId = songId;
       playerSongName.textContent = song.name;
       playerBar.classList.add('active');
-      document.querySelectorAll('.play-btn').forEach(btn => {
-        btn.textContent = btn.dataset.id == songId ? '⏸' : '▶';
-      });
+      updatePlayPauseIcon(true);
 
       if ('mediaSession' in navigator) {
         navigator.mediaSession.metadata = new MediaMetadata({
@@ -129,6 +164,7 @@ async function playSong(songId) {
           audioPlayer.currentTime = 0;
           playerBar.classList.remove('active');
           currentSongId = null;
+          updatePlayPauseIcon(false);
           loadSongs().then(songs => renderLibrary(songs));
         });
       }
@@ -139,7 +175,6 @@ async function playSong(songId) {
 function togglePlayback(songId) {
   if (currentSongId == songId && !audioPlayer.paused) {
     audioPlayer.pause();
-    document.querySelector(`.play-btn[data-id="${songId}"]`).textContent = '▶';
   } else {
     playSong(songId);
   }
@@ -156,24 +191,18 @@ function renderLibrary(songs) {
     const li = document.createElement('li');
     li.className = 'song-item';
     const durationDisplay = song.duration !== null ? secondsToDecimalMMSS(song.duration) : 'Loading...';
-    const isPlaying = currentSongId == song.id && !audioPlayer.paused;
     li.innerHTML = `
       <div class="song-info">
         <span class="song-name">${song.name}</span>
         <span class="song-duration">${durationDisplay}</span>
       </div>
-      <button class="play-btn" data-id="${song.id}">${isPlaying ? '⏸' : '▶'}</button>
     `;
     
-    // Touch highlight feedback
     li.addEventListener('touchstart', () => li.classList.add('touching'), { passive: true });
     li.addEventListener('touchend', () => li.classList.remove('touching'));
     li.addEventListener('touchcancel', () => li.classList.remove('touching'));
+    li.addEventListener('click', () => togglePlayback(song.id));
     
-    li.querySelector('.play-btn').addEventListener('click', (e) => {
-      e.stopPropagation();
-      togglePlayback(song.id);
-    });
     libraryEl.appendChild(li);
   });
 }
@@ -218,6 +247,8 @@ async function initApp() {
       audioPlayer.play().catch(() => {});
     }
   });
+
+  updatePlayPauseIcon(false);
 
   const songs = await loadSongs();
   renderLibrary(songs);
