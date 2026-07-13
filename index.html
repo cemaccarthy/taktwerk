@@ -522,7 +522,29 @@
     </div>
   </div>
 
-  <script type="module" src="/taktwerk/app.js?v=2"></script>
-  <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/taktwerk/sw.js');</script>
+  <script type="module" src="/taktwerk/app.js?v=3"></script>
+<script>
+// One-time SW reset: unregisters old SW, then re-registers fresh
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(function(registrations) {
+    var found = false;
+    registrations.forEach(function(reg) {
+      if (reg.scope.indexOf('/taktwerk/') !== -1) {
+        reg.unregister();
+        found = true;
+      }
+    });
+    if (found) {
+      // Re-register after old SW is gone
+      setTimeout(function() {
+        navigator.serviceWorker.register('/taktwerk/sw.js');
+      }, 500);
+    } else {
+      navigator.serviceWorker.register('/taktwerk/sw.js');
+    }
+  });
+}
+</script>
+
 </body>
 </html>
