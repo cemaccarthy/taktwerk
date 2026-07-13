@@ -1,4 +1,4 @@
-// app.js - Main application logic with playback + decimal progress + iOS polish
+// app.js - Main application logic with playback + decimal progress + iOS polish + touch highlight
 import { secondsToDecimalMMSS } from '/taktwerk/takt.js';
 
 const DB_NAME = 'TaktwerkDB';
@@ -11,14 +11,12 @@ let currentSongId = null;
 const audioPlayer = new Audio();
 audioPlayer.preload = 'auto';
 
-// DOM References for player bar
 const playerBar = document.getElementById('player-bar');
 const playerSongName = document.getElementById('player-song-name');
 const playerTimes = document.getElementById('player-times');
 const progressFill = document.getElementById('progress-fill');
 const progressContainer = document.getElementById('progress-container');
 
-// Initialize IndexedDB
 async function initDB() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -74,13 +72,11 @@ async function loadSongs() {
   });
 }
 
-// Update player bar UI with decimal times
 function updatePlayerUI(elapsed, remaining, progress) {
   playerTimes.textContent = `${secondsToDecimalMMSS(elapsed)} / ${secondsToDecimalMMSS(elapsed + remaining)}`;
   progressFill.style.width = `${(progress * 100).toFixed(2)}%`;
 }
 
-// Seek on progress bar tap
 progressContainer.addEventListener('click', (e) => {
   if (!audioPlayer.duration) return;
   const rect = progressContainer.getBoundingClientRect();
@@ -88,7 +84,6 @@ progressContainer.addEventListener('click', (e) => {
   audioPlayer.currentTime = ratio * audioPlayer.duration;
 });
 
-// Real-time progress updates
 audioPlayer.addEventListener('timeupdate', () => {
   if (!audioPlayer.duration) return;
   const elapsed = audioPlayer.currentTime;
@@ -97,7 +92,6 @@ audioPlayer.addEventListener('timeupdate', () => {
   updatePlayerUI(elapsed, remaining, progress);
 });
 
-// Show/hide player bar on play/end
 audioPlayer.addEventListener('play', () => playerBar.classList.add('active'));
 audioPlayer.addEventListener('ended', () => {
   playerBar.classList.remove('active');
@@ -122,7 +116,6 @@ async function playSong(songId) {
         btn.textContent = btn.dataset.id == songId ? '⏸' : '▶';
       });
 
-      // Media Session API for lock screen controls
       if ('mediaSession' in navigator) {
         navigator.mediaSession.metadata = new MediaMetadata({
           title: song.name,
@@ -171,6 +164,12 @@ function renderLibrary(songs) {
       </div>
       <button class="play-btn" data-id="${song.id}">${isPlaying ? '⏸' : '▶'}</button>
     `;
+    
+    // Touch highlight feedback
+    li.addEventListener('touchstart', () => li.classList.add('touching'), { passive: true });
+    li.addEventListener('touchend', () => li.classList.remove('touching'));
+    li.addEventListener('touchcancel', () => li.classList.remove('touching'));
+    
     li.querySelector('.play-btn').addEventListener('click', (e) => {
       e.stopPropagation();
       togglePlayback(song.id);
@@ -214,7 +213,6 @@ async function initApp() {
     }
   });
 
-  // Resume audio when returning from background
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden && !audioPlayer.paused && currentSongId) {
       audioPlayer.play().catch(() => {});
@@ -226,4 +224,3 @@ async function initApp() {
 }
 
 initApp();
-
