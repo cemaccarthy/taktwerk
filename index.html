@@ -10,7 +10,7 @@
   <link rel="manifest" href="/taktwerk/manifest.json">
   <link rel="apple-touch-icon" href="/taktwerk/icon-192.png">
   <style>
-    * { margin: AMwgRTR0; padding: 0; box-sizing: border-box; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body { 
       font-family: -apple-system, system-ui, sans-serif; 
       background: #ffffff; 
@@ -43,7 +43,7 @@
     #library {
       width: 100%;
       max-width: 600px;
-      list8l9K-style: none;
+      list-style: none;
     }
     .song-item {
       background: #f5f5f7;
@@ -60,196 +60,464 @@
       transition: background 0.15s ease;
     }
     .song-item.pressing {
-      background: #e0e0e5;
-      transition: background 0.65s ease;
+      background: #c7c7cc;
+      transition: background 0.4s ease;
     }
     .song-info { display: flex; flex-direction: column; flex: 1; min-width: 0; }
     .song-name { font-weight: 500; font-size: 16px; }
     .song-duration { font-size: 13px; color: #6e6e73; margin-top: 2px; }
-    .status-msg { margin-top: 10px; font-size: 14px; color: #6e6e73; }
+    .status-msg { margin-top: 1Here are the three changes: menu appears at **400ms** (snappy, near-instant feel), sound effect completely removed, and darkening color changed to `#c7c7cc0px; font-size: 1` with a **0.4s transition** so the visual feedback is both darker and completes faster.
+
+### 🔧 Change Explanation
+
+1.  **Timer reduced to 400ms** – Menu appears much sooner; feels responsive rather than delayed
+2.  **Sound effect removed** – All `ACTION_SOUND` references, base64 constant, preload call, and play calls deleted entirely
+3.  **Darker + faster transition** – `.song-item.pressing` background changed from `#e0e0e5` → `#c7c7cc` (significantly darker), transition changed from `0.65s` → `0.4s` so the darkening animation completes before the menu appears, making it clearly visible
+
+---
+
+### ✅ Complete Updated `index.html`
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#ffffff">
+  <title>Taktwerk</title>
+  <link rel="manifest" href="/taktwerk/manifest.json">
+  <link rel="apple-touch-icon" href="/taktwerk/icon-192.png">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: -apple-system, system-ui, sans-serif; 
+      background: #ffffff; 
+      color: #1d1d1f;
+      min-height: 100dvh; 
+      padding: env(safe-area-inset-top) 16px calc(env(safe-area-inset-bottom) + 160px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    h1 { margin-bottom: 20px; }
+    
+    .import-btn {
+      background: #007aff;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-size: 17px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 20px;
+      width: 100%;
+      max-width: 300px;
+    }
+    .import-btn:active { opacity: 0.8; }
+
+    #library {
+      width: 100%;
+      max-width: 600px;
+      list-style: none;
+    }
+    .song-item {
+      background: #f5f5f7;
+      padding: 14px 16px;
+      margin-bottom: 8px;
+      border-radius: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-user-select: none;
+      user-select: none;
+      transition: background 0.15s ease;
+    }
+    .song-item.pressing {
+      background4px; color: #6e: #c7c7cc;
+      transition: background 0.4s ease;
+    }
+    .song-info { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+    .song-name { font-weight: 500; font-size: 16px; }
+    .song-duration { font-size: 13px; color: #6e6e73; margin-top: 2px; }
+    .status-msg { margin-top: 10px; font-size: 14px; color: #6e6e736e73; }
+
+   ; }
 
     .overlay {
-      position: fixed !important;
-      top: 0 !important;
-      left: 0 !important;
-      right: 0 !important;
-      bottom: 0 !important;
-      background: rgba(0,0,0,0.4);
-      z-index: 9999 !important;
+ .overlay {
+      position: fixed      position: fixed !important;
+ !important;
+      top:       top: 0 !important;0 !important;
+      left:
+      left: 0 !important 0 !important;
+      right;
+      right: 0 !: 0 !important;
+     important;
+      bottom: 0 bottom: 0 !important;
+ !important;
+      background: rgba      background: rgba(0,0(0,0,0,0,0,0.4);
+.4);
+      z-index:      z-index: 999 9999 !important;9 !important;
+      display:
       display: none;
-      align-items: center;
-      justify-content: center;
+      none;
+      align-items: center align-items: center;
+      justify;
+      justify-content: center;-content: center;
     }
-    .overlay.active {
-      display: flex !important;
-      animation: fadeIn 0.2s ease;
+
     }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .overlay.active    .overlay.active {
+      display {
+      display: flex !important: flex !important;
+      animation;
+      animation: fadeIn 0: fadeIn 0.2s ease.2s ease;
+    };
+    }
+    @key
+    @keyframes fadeIn { fromframes fadeIn { from { opacity:  { opacity: 0; } to0; } to { opacity:  { opacity: 1; } }1; } }
+
+    .action
 
     .action-sheet {
-      background: #ffffff;
-      border-radius: 14px;
-      width: 280px;
+     -sheet {
+      background: #ffffff background: #ffffff;
+      border;
+      border-radius: 1-radius: 14px;
+4px;
+      width:       width: 280px280px;
+      overflow;
       overflow: hidden;
-      animation: scaleIn 0.2s ease;
-      -webkit-user-select: none;
-      user-select: none;
+: hidden;
+      animation: scale      animation: scaleIn 0.In 0.2s ease;2s ease;
+      -webkit
+      -webkit-user-select: none-user-select: none;
+      user;
+      user-select: none;-select: none;
     }
-    @keyframes scaleIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-    .action-sheet-title {
-      padding: 16px;
-      text-align: center;
-      font-size: 13px;
-      color: #6e6e73;
-      border-bottom: 1px solid #e5e5ea;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      -webkit-user-select: none;
-      user-select: none;
+
     }
+    @keyframes    @keyframes scaleIn { from scaleIn { from { transform: scale { transform: scale(0.9(0.9); opacity: ); opacity: 0; } to0; } to { transform: scale { transform: scale(1); opacity(1); opacity: 1;: 1; } }
+    } }
+    .action-sheet-title .action-sheet-title {
+      padding {
+      padding: 16: 16px;
+     px;
+      text-align: center text-align: center;
+      font;
+      font-size: 1-size: 13px;
+3px;
+      color: #      color: #6e6e6e6e73;
+73;
+      border-bottom:      border-bottom: 1px solid 1px solid #e5e #e5e5ea;
+5ea;
+      white-space:      white-space: nowrap;
+      nowrap;
+      overflow: hidden; overflow: hidden;
+      text-
+      text-overflow: ellipsisoverflow: ellipsis;
+      -;
+      -webkit-user-select:webkit-user-select: none;
+      none;
+      user-select: none;
+    } user-select: none;
+    }
+    .action
     .action-sheet button {
-      width: 100%;
-      padding: 16px;
+-sheet button {
+      width:       width: 100%;100%;
+      padding:
+      padding: 16px 16px;
+      border;
       border: none;
-      background: none;
+: none;
+      background: none      background: none;
+      font-size: 1;
       font-size: 17px;
-      cursor: pointer;
-      border-bottom: 1px solid #e5e5ea;
+7px;
+      cursor: pointer      cursor: pointer;
+      border;
+      border-bottom: 1-bottom: 1px solid #epx solid #e5e5ea5e5ea;
+      font-family: inherit;;
       font-family: inherit;
+      color:
       color: #1d1d1f;
-      -webkit-user-select: none;
-      user-select: none;
+      -webkit #1d1d1f;
+      -webkit-user-select: none-user-select: none;
+      user;
+      user-select: none;-select: none;
     }
-    .action-sheet button:last-child { border-bottom: none; }
-    .action-sheet button:active { background: #f5f5f7; }
-    .btn-danger { color: #ff3b30 !important; }
+
+    }
+    .action-sheet    .action-sheet button:last-child { button:last-child { border-bottom: none border-bottom: none; }
+   ; }
+    .action-sheet button .action-sheet button:active { background:active { background: #f5: #f5f5f7f5f7; }
+   ; }
+    .btn-danger { .btn-danger { color: #ff color: #ff3b303b30 !important; } !important; }
+
+    .rename
 
     .rename-modal {
+      background: #ffffff-modal {
       background: #ffffff;
-      border-radius: 14px;
-      width: 300px;
-      padding: 24px;
-      animation: scaleIn 0.2s ease;
+      border;
+      border-radius: 1-radius: 14px;
+      width: 4px;
+      width: 300px300px;
+      padding;
+      padding: 24: 24px;
+     px;
+      animation: scaleIn animation: scaleIn 0.2 0.2s ease;
+s ease;
     }
-    .rename-modal h3 { font-size: 17px; margin-bottom: 4px; }
-    .rename-modal input {
-      width: 100%;
-      padding: 10px;
-      font-size: 16px;
-      border: 1px solid #e5e5ea;
-      border-radius: 8px;
-      margin: 12px 0;
+       }
+    .rename-modal h .rename-modal h3 { font-size3 { font-size: 17: 17px; margin-bottompx; margin-bottom: 4px: 4px; }
+   ; }
+    .rename-modal input .rename-modal input {
+      width {
+      width: 10: 100%;
+     0%;
+      padding: 1 padding: 10px;
+0px;
+      font-size:      font-size: 16px 16px;
+      border;
+      border: 1px: 1px solid #e5 solid #e5e5ea;e5ea;
+      border-radius
+      border-radius: 8px: 8px;
+      margin;
+      margin: 12: 12px 0;px 0;
+      font-family
       font-family: inherit;
+      outline: none: inherit;
       outline: none;
-      -webkit-user-select: text;
-      user-select: text;
+      -;
+      -webkit-user-select:webkit-user-select: text;
+      text;
+      user-select: text user-select: text;
+    };
     }
-    .rename-modal input:focus { border-color: #007aff; }
-    .rename-modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
-    .rename-modal-actions button {
-      padding: 8px 16px;
+    .rename
+    .rename-modal input:focus {-modal input:focus { border-color: # border-color: #007aff007aff; }
+   ; }
+    .rename-modal-actions .rename-modal-actions { display: flex { display: flex; gap: ; gap: 8px; justify8px; justify-content: flex-end-content: flex-end; }
+   ; }
+    .rename-modal-actions .rename-modal-actions button {
+      button {
+      padding: 8 padding: 8px 16px;
+      border-radius: px 16px;
       border-radius: 8px;
-      border: none;
-      font-size: 15px;
-      cursor: pointer;
-      font-family: inherit;
+8px;
+      border: none      border: none;
+      font;
+      font-size: 1-size: 15px;
+5px;
+      cursor: pointer      cursor: pointer;
+      font;
+      font-family: inherit;-family: inherit;
     }
-    .btn-cancel { background: #f5f5f7; color: #1d1d1f; }
-    .btn-save { background: #007aff; color: #ffffff; }
 
-    #player-bar {
+    }
+    .btn-cancel    .btn-cancel { background: # { background: #f5f5f5f5f7; colorf7; color: #1d: #1d1d1f1d1f; }
+   ; }
+    .btn-save { .btn-save { background: #0 background: #007aff;07aff; color: #ffffff color: #ffffff; }
+
+   ; }
+
+    #player-bar { #player-bar {
+      position:
       position: fixed;
-      bottom: 0;
-      left: 0;
+      fixed;
+      bottom: 0 bottom: 0;
+      left;
+      left: 0;: 0;
+      right:
       right: 0;
-      background: #ffffff;
-      border-top: 1px solid #e5e5ea;
-      padding: 20px 24px calc(20px + env(safe-area-inset-bottom));
+ 0;
+      background: #      background: #ffffff;
+     ffffff;
+      border-top:  border-top: 1px solid #1px solid #e5e5e5e5ea;
+     ea;
+      padding: 2 padding: 20px 20px 24px calc(4px calc(20px +20px + env(safe-area env(safe-area-inset-bottom));-inset-bottom));
+      display:
       display: none;
-      flex-direction: column;
-      gap: 14px;
-      z-index: 100;
+      none;
+      flex-direction: column flex-direction: column;
+      gap;
+      gap: 14: 14px;
+     px;
+      z-index:  z-index: 100;100;
     }
-    #player-bar.active { display: flex; }
-    .player-song-name { 
-      font-weight: 600; font-size: 18px;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-      text-align: center; width: 100%;
+
     }
-    .player-times { color: #6e6e73; font-variant-numeric: tabular-nums; font-size: 16px; text-align: center; }
+    #player-bar    #player-bar.active { display:.active { display: flex; }
+ flex; }
+    .player-song    .player-song-name { 
+     -name { 
+      font-weight:  font-weight: 600;600; font-size:  font-size: 18px;18px;
+      white-space
+      white-space: nowrap; overflow: nowrap; overflow: hidden; text: hidden; text-overflow: ell-overflow: ellipsis;
+     ipsis;
+      text-align: center text-align: center; width: ; width: 100%;100%;
+    }
+
+    }
+    .player-times    .player-times { color: # { color: #6e6e6e6e73; font73; font-variant-numeric-variant-numeric: tabular-: tabular-nums; font-sizenums; font-size: 16: 16px; text-alignpx; text-align: center; }: center; }
+    .progress
     .progress-container {
-      width: 100%; height: 32px;
-      display: flex; align-items: center;
-      cursor: pointer; -webkit-tap-highlight-color: transparent;
+     -container {
+      width: 1 width: 100%; height00%; height: 32: 32px;
+     px;
+      display: flex; display: flex; align-items: center align-items: center;
+      cursor;
+      cursor: pointer; -: pointer; -webkit-tap-highlightwebkit-tap-highlight-color: transparent;-color: transparent;
     }
-    .progress-track {
-      width: 100%; height: 6px;
-      background: #e5e5ea; border-radius: 3px;
-      position: relative; overflow: hidden;
+
     }
-    .progress-fill {
-      height: 100%; background: #007aff; border-radius: 3px;
-      width: 0%; transition: width 0.1s linear;
+    .progress-track    .progress-track {
+      width {
+      width: 10: 100%; height:0%; height: 6px; 6px;
+      background:
+      background: #e5e #e5e5ea; border5ea; border-radius: 3-radius: 3px;
+     px;
+      position: relative; position: relative; overflow: hidden; overflow: hidden;
     }
-    .player-controls { display: flex; justify-content: center; align-items: center; gap: 24px; }
+
+    }
+    .progress-fill    .progress-fill {
+      height {
+      height: 10: 100%; background:0%; background: #007 #007aff; border-radiusaff; border-radius: 3px: 3px;
+      width;
+      width: 0%;: 0%; transition: width  transition: width 0.1s0.1s linear;
+    linear;
+    }
+    . }
+    .player-controls { displayplayer-controls { display: flex; justify: flex; justify-content: center;-content: center; align-items: center align-items: center; gap: ; gap: 24px;24px; }
+    . }
     .control-btn {
-      background: none; border: none; cursor: pointer; padding: 8px;
-      -webkit-tap-highlight-color: transparent;
+control-btn {
+      background: none      background: none; border: none; border: none; cursor: pointer; cursor: pointer; padding: ; padding: 8px;
+8px;
+      -webkit-t      -webkit-tap-highlight-color:ap-highlight-color: transparent;
+    transparent;
     }
-    .control-btn svg { width: 36px; height: 36px; fill: #007aff; }
-    .control-btnCKPk0lprHSqU3fAmKkU:active svg { opacity: 0.6; }
+    . }
+    .control-btn svg {control-btn svg { width: 3 width: 36px; height6px; height: 36: 36px; fill:px; fill: #007 #007aff; }
+aff; }
+    .control-btn    .control-btn:active svg {:active svg { opacity: 0 opacity: 0.6; }.6; }
+  </style
   </style>
 </head>
+</head>
+<body>>
 <body>
-  <h1>Taktwerk</h1>
+  <h
+  <h1>Taktwerk1>Taktwerk</h1></h1>
   
-  <input type="file" id="audioPicker" multiple 
-         accept="audio/mpeg, audio/mp3, audio/aac, audio/wav, audio/flac, audio/ogg, .mp3, .aac, .wav, .flac, .ogg, .m4a" 
-         style="display:none">
-  <button id="importBtn" class="import-btn">Import Songs</button>
   
-  <div id="status" class="status-msg"></div>
-  <ul id="library"></ul>
+  
+  <input type="file<input type="file" id="audio" id="audioPicker" multiple 
+Picker" multiple 
+         accept="audio         accept="audio/mpeg, audio/mpeg, audio/mp3, audio/mp3, audio/aac, audio/aac, audio/wav, audio/wav, audio/flac, audio/flac, audio/ogg, ./ogg, .mp3, .mp3, .aac, .wavaac, .wav, .flac, .flac, .ogg,, .ogg, .m4a .m4a" 
+         style" 
+         style="display:none">="display:none">
+  <button
+  <button id="importBtn id="importBtn" class="import" class="import-btn">Import Songs-btn">Import Songs</button>
+</button>
+  
+  <div  
+  <div id="status" class="status-msg id="status" class="status-msg"></div>
+"></div>
+  <ul id  <ul id="library"></ul="library"></ul>
 
-  <div id="action-overlay" class="overlay">
-    <div class="action-sheet">
-      <div class="action-sheet-title" id="action-sheet-title"></div>
-      <button id="action-rename">Rename</button>
-      <button id="action-delete" class="btn-danger">Delete</button>
-      <button id="action-cancel">Cancel</button>
+  >
+
+  <div id="action<div id="action-overlay" class="-overlay" class="overlay">
+   overlay">
+    <div class=" <div class="action-sheet">
+action-sheet">
+      <div class      <div class="action-sheet-title="action-sheet-title" id="action" id="action-sheet-title"></div-sheet-title"></div>
+      >
+      <button id="action<button id="action-rename">Rename-rename">Rename</button>
+</button>
+      <button id      <button id="action-delete"="action-delete" class="btn-danger class="btn-danger">Delete</button">Delete</button>
+      >
+      <button id="action<button id="action-cancel">Cancel</button>
+   -cancel">Cancel</button>
     </div>
-  </div>
+ </div>
+  </div>  </div>
 
-  <div id="rename-overlay" class="overlay">
-    <div class="rename-modal">
-      <h3>Rename Song</h3>
-      <input type="text" id="rename-input" autocomplete="off">
-      <div class="rename-modal-actions">
-        <button class="btn-cancel" id="rename-cancel">Cancel</button>
-        <button class="btn-save" id="rename-save">Save</button>
+  <div
+
+  <div id="rename-overlay id="rename-overlay" class="overlay" class="overlay">
+    ">
+    <div class="rename<div class="rename-modal">
+     -modal">
+      <h3>R <h3>Rename Song</hename Song</h3>
+     3>
+      <input type=" <input type="text" id="text" id="rename-input" autocompleterename-input" autocomplete="off">
+="off">
+      <div class      <div class="rename-modal-actions="rename-modal-actions">
+        ">
+        <button class="btn<button class="btn-cancel" id="-cancel" id="rename-cancel">Cancelrename-cancel">Cancel</button>
+</button>
+        <button class        <button class="btn-save"="btn-save" id="rename-save id="rename-save">Save</button">Save</button>
+      </>
       </div>
+   div>
     </div>
-  </div>
+ </div>
+  </div>  </div>
 
-  <div id="player-bar">
-    <span class="player-song-name" id="player-song-name"></span>
-    <span class="player-times" id="player-times">00:00 / 00:00</span>
-    <div class="progress-container" id="progress-container">
-      <div class="progress-track">
-        <div class="progress-fill" id="progress-fill"></div>
+  <div
+
+  <div id="player-bar id="player-bar">
+    ">
+    <span class="player<span class="player-song-name" id-song-name" id="player-song-name="player-song-name"></span>
+"></span>
+    <span class    <span class="player-times"="player-times" id="player-times id="player-times">00:">00:00 / 00 / 00:000:00</span>0</span>
+    <div
+    <div class="progress-container class="progress-container" id="progress" id="progress-container">
+     -container">
+      <div class=" <div class="progress-track">
+progress-track">
+        <div class="progress-fill"        <div class="progress-fill" id="progress-fill id="progress-fill"></div>
+"></div>
       </div>
+    </div      </div>
     </div>
-    <div class="player-controls">
-      <button class="control-btn" id="play-pause-btn" aria-label="Play/Pause"></button>
-    </div>
+    >
+    <div class="player<div class="player-controls">
+     -controls">
+      <button class=" <button class="control-btn" idcontrol-btn" id="play-pause="play-pause-btn" aria-label-btn" aria-label="Play/Pause="Play/Pause"></button>
+"></button>
+    </div>    </div>
+  </div
   </div>
   
-  <script type="module" src="/taktwerk/app.js"></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/taktwerk/sw.js');
+ >
+  
+  <script type=" <script type="module" src="/module" src="/taktwerk/app.jstaktwerk/app.js"></script>
+"></script>
+  <script>  <script>
+    if ('
+    if ('serviceWorker' inserviceWorker' in navigator) {
+ navigator) {
+      navigator.serviceWorker      navigator.serviceWorker.register('/taktwerk.register('/taktwerk/sw.js');
+/sw.js');
     }
+     }
   </script>
+ </script>
 </body>
+</body>
+</html>
 </html>
