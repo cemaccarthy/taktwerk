@@ -80,18 +80,65 @@
     .context-menu button:active { background: #f5f5f7; }
     .context-menu .btn-danger { color: #ff3b30; }
 
+    /* Overlays */
     .overlay {
-      position: fixed !important; top: 0 !important; left: 0 !important;
-      right: 0 !important; bottom: 0 !important; background: rgba(0,0,0,0.4);
-      z-index: 9999 !important; display: none; align-items: center; justify-content: center;
+      position: fixed !important;
+      top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
+      background: rgba(0,0,0,0.4); z-index: 9999 !important;
+      display: none; align-items: center; justify-content: center;
     }
     .overlay.active { display: flex !important; animation: fadeIn 0.2s ease; }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes scaleIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+    /* Shared modal styles */
+    .modal {
+      background: #ffffff; border-radius: 14px; width: 320px; padding: 24px;
+      animation: scaleIn 0.2s ease; max-height: 85vh; overflow-y: auto;
+      -webkit-user-select: none; user-select: none;
+    }
+    .modal h3 { font-size: 17px; margin-bottom: 16px; text-align: center; }
+    .modal label { display: block; font-size: 13px; color: #6e6e73; margin-bottom: 4px; margin-top: 12px; }
+    .modal label:first-of-type { margin-top: 0; }
+    .modal input {
+      width: 100%; padding: 10px; font-size: 16px; border: 1px solid #e5e5ea;
+      border-radius: 8px; font-family: inherit; outline: none;
+      -webkit-user-select: text; user-select: text;
+    }
+    .modal input:focus { border-color: #007aff; }
+    .modal-row { display: flex; gap: 8px; }
+    .modal-row > div { flex: 1; }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+    .modal-actions button {
+      padding: 10px 20px; border-radius: 8px; border: none; font-size: 15px;
+      cursor: pointer; font-family: inherit; font-weight: 500;
+    }
+    .btn-cancel { background: #f5f5f7; color: #1d1d1f; }
+    .btn-save { background: #007aff; color: #ffffff; }
+
+    /* Catalogue section within composer modal */
+    .catalogue-section { margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e5ea; }
+    .catalogue-section-title { font-size: 13px; color: #6e6e73; margin-bottom: 8px; }
+    .catalogue-entry { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; }
+    .catalogue-entry input { flex: 1; }
+    .catalogue-remove {
+      width: 28px; height: 28px; border-radius: 50%; border: none;
+      background: #f5f5f7; color: #6e6e73; font-size: 16px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .catalogue-remove:active { background: #e5e5ea; }
+    .add-catalogue-btn {
+      width: 100%; padding: 10px; border: 1px dashed #007aff; border-radius: 8px;
+      background: none; color: #007aff; font-size: 14px; font-weight: 500;
+      cursor: pointer; font-family: inherit; margin-top: 4px;
+    }
+    .add-catalogue-btn:active { background: #f0f7ff; }
+
+    /* Rename modal (kept) */
     .rename-modal {
       background: #ffffff; border-radius: 14px; width: 300px; padding: 24px;
       animation: scaleIn 0.2s ease;
     }
-    @keyframes scaleIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     .rename-modal h3 { font-size: 17px; margin-bottom: 4px; }
     .rename-modal input {
       width: 100%; padding: 10px; font-size: 16px; border: 1px solid #e5e5ea;
@@ -104,8 +151,6 @@
       padding: 8px 16px; border-radius: 8px; border: none; font-size: 15px;
       cursor: pointer; font-family: inherit;
     }
-    .btn-cancel { background: #f5f5f7; color: #1d1d1f; }
-    .btn-save { background: #007aff; color: #ffffff; }
 
     #player-bar {
       position: fixed; bottom: 0; left: 0; right: 0; background: #ffffff;
@@ -159,13 +204,51 @@
   </div>
 
   <div id="view-add" class="view">
-    <input type="file" id="audioPicker" multiple 
-           accept="audio/mpeg, audio/mp3, audio/aac, audio/wav, audio/flac, audio/ogg, .mp3, .aac, .wav, .flac, .ogg, .m4a" 
-           style="display:none">
-    <button id="importBtn" class="import-btn">Select Songs</button>
-    <div id="status" class="status-msg"></div>
+    <!-- Temporary trigger for composer modal -->
+    <button id="add-composer-trigger" class="import-btn">+ Add New Composer</button>
+    <div id="add-status" class="status-msg"></div>
   </div>
 
+  <!-- Composer Creation Modal -->
+  <div id="composer-overlay" class="overlay">
+    <div class="modal" id="composer-modal">
+      <h3>Add New Composer</h3>
+      
+      <label for="comp-first">First Name *</label>
+      <input type="text" id="comp-first" autocomplete="off">
+      
+      <label for="comp-last">Last Name *</label>
+      <input type="text" id="comp-last" autocomplete="off">
+      
+      <label for="comp-country">Country of Origin *</label>
+      <input type="text" id="comp-country" autocomplete="off">
+      
+      <div class="modal-row">
+        <div>
+          <label for="comp-birth">Birth Year *</label>
+          <input type="number" id="comp-birth" inputmode="numeric" autocomplete="off">
+        </div>
+        <div>
+          <label for="comp-death">Death Year *</label>
+          <input type="number" id="comp-death" inputmode="numeric" autocomplete="off">
+        </div>
+      </div>
+      
+      <!-- Dynamic Catalogue Section -->
+      <div class="catalogue-section">
+        <div class="catalogue-section-title">Catalogues (optional)</div>
+        <div id="catalogue-list"></div>
+        <button type="button" class="add-catalogue-btn" id="add-catalogue-btn">+ Add Catalogue</button>
+      </div>
+      
+      <div class="modal-actions">
+        <button class="btn-cancel" id="composer-cancel">Cancel</button>
+        <button class="btn-save" id="composer-save">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rename Modal (kept) -->
   <div id="rename-overlay" class="overlay">
     <div class="rename-modal">
       <h3>Rename Song</h3>
@@ -198,4 +281,3 @@
   </script>
 </body>
 </html>
-
