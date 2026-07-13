@@ -1,4 +1,4 @@
-// app.js - Expanded player with custom SVG controls
+// app.js - With rename functionality
 import { secondsToDecimalMMSS } from '/taktwerk/takt.js';
 
 const DB_NAME = 'TaktwerkDB';
@@ -7,24 +7,14 @@ const STORE_NAME = 'songs';
 
 let db;
 let currentSongId = null;
+let longPressTimer = null;
 
 const audioPlayer = new Audio();
 audioPlayer.preload = 'auto';
 
-// Optimized Custom SVG Icons (currentColor inherits #007aff from CSS)
-const PLAY_ICON = `<svg viewBox="0 0 24 24" fill="none">
-  <path opacity="0.1" d="M4 5.49683V18.5032C4 20.05 5.68077 21.0113 7.01404 20.227L18.0694 13.7239C19.384 12.9506 19.384 11.0494 18.0694 10.2761L7.01404 3.77296C5.68077 2.98869 4 3.95 4 5.49683Z" fill="currentColor"/>
-  <path d="M4 5.49683V18.5032C4 20.05 5.68077 21.0113 7.01404 20.227L18.0694 13.7239C19.384 12.9506 19.384 11.0494 18.0694 10.2761L7.01404 3.77296C5.68077 2.98869 4 3.95 4 5.49683Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>`;
+const PLAY_ICON = `<svg viewBox="0 0 24 24" fill="none"><path opacity="0.1" d="M4 5.49683V18.5032C4 20.05 5.68077 21.0113 7.01404 20.227L18.0694 13.7239C19.384 12.9506 19.384 11.0494 18.0694 10.2761L7.01404 3.77296C5.68077 2.98869 4 3.95 4 5.49683Z" fill="currentColor"/><path d="M4 5.49683V18.5032C4 20.05 5.68077 21.0113 7.01404 20.227L18.0694 13.7239C19.384 12.9506 19.384 11.0494 18.0694 10.2761L7.01404 3.77296C5.68077 2.98869 4 3.95 4 5.49683Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const PAUSE_ICON = `<svg viewBox="0 0 24 24" fill="none"><path opacity="0.1" d="M14 19L14 5C14 3.89543 14.8954 3 16 3L17 3C18.1046 3 19 3.89543 19 5L19 19C19 20.1046 18.1046 21 17 21L16 21C14.8954 21 14 20.1046 14 19Z" fill="currentColor"/><path opacity="0.1" d="M10 19L10 5C10 3.89543 9.10457 3 8 3L7 3C5.89543 3 5 3.89543 5 5L5 19C5 20.1046 5.89543 21 7 21L8 21C9.10457 21 10 20.1046 10 19Z" fill="currentColor"/><path d="M14 19L14 5C14 3.89543 14.8954 3 16 3L17 3C18.1046 3 19 3.89543 19 5L19 19C19 20.1046 18.1046 21 17 21L16 21C14.8954 21 14 20.1046 14 19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 19L10 5C10 3.89543 9.10457 3 8 3L7 3C5.89543 3 5 3.89543 5 5L5 19C5 20.1046 5.89543 21 7 21L8 21C9.10457 21 10 20.1046 10 19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
-const PAUSE_ICON = `<svg viewBox="0 0 24 24" fill="none">
-  <path opacity="0.1" d="M14 19L14 5C14 3.89543 14.8954 3 16 3L17 3C18.1046 3 19 3.89543 19 5L19 19C19 20.1046 18.1046 21 17 21L16 21C14.8954 21 14 20.1046 14 19Z" fill="currentColor"/>
-  <path opacity="0.1" d="M10 19L10 5C10 3.89543 9.10457 3 8 3L7 3C5.89543 3 5 3.89543 5 5L5 19C5 20.1046 5.89543 21 7 21L8 21C9.10457 21 10 20.1046 10 19Z" fill="currentColor"/>
-  <path d="M14 19L14 5C14 3.89543 14.8954 3 16 3L17 3C18.1046 3 19 3.89543 19 5L19 19C19 20.1046 18.1046 21 17 21L16 21C14.8954 21 14 20.1046 14 19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M10 19L10 5C10 3.89543 9.10457 3 8 3L7 3C5.89543 3 5 3.89543 5 5L5 19C5 20.1046 5.89543 21 7 21L8 21C9.10457 21 10 20.1046 10 19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>`;
-
-// DOM References
 const playerBar = document.getElementById('player-bar');
 const playerSongName = document.getElementById('player-song-name');
 const playerTimes = document.getElementById('player-times');
@@ -32,7 +22,6 @@ const progressFill = document.getElementById('progress-fill');
 const progressContainer = document.getElementById('progress-container');
 const playPauseBtn = document.getElementById('play-pause-btn');
 
-// Initialize IndexedDB
 async function initDB() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -55,6 +44,24 @@ async function saveSongBlob(file) {
     const addRequest = store.add(songData);
     addRequest.onsuccess = () => resolve(addRequest.result);
     addRequest.onerror = () => reject(addRequest.error);
+  });
+}
+
+async function updateSongName(songId, newName) {
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([STORE_NAME], 'readwrite');
+    const store = transaction.objectStore(STORE_NAME);
+    const getRequest = store.get(songId);
+    getRequest.onsuccess = () => {
+      const song = getRequest.result;
+      if (song) {
+        song.name = newName;
+        const putRequest = store.put(song);
+        putRequest.onsuccess = () => resolve();
+        putRequest.onerror = () => reject(putRequest.error);
+      }
+    };
+    getRequest.onerror = () => reject(getRequest.error);
   });
 }
 
@@ -180,6 +187,37 @@ function togglePlayback(songId) {
   }
 }
 
+// Rename functionality
+function startRename(songId, currentName, nameElement) {
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = currentName;
+  input.className = 'rename-input';
+  
+  nameElement.replaceWith(input);
+  input.focus();
+  input.select();
+  
+  let saved = false;
+  const save = async () => {
+    if (saved) return;
+    saved = true;
+    const newName = input.value.trim() || currentName;
+    await updateSongName(songId, newName);
+    const songs = await loadSongs();
+    renderLibrary(songs);
+  };
+  
+  input.addEventListener('blur', save);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+    if (e.key === 'Escape') { 
+      saved = true; // Prevent save on blur
+      loadSongs().then(songs => renderLibrary(songs));
+    }
+  });
+}
+
 function renderLibrary(songs) {
   const libraryEl = document.getElementById('library');
   libraryEl.innerHTML = '';
@@ -198,9 +236,31 @@ function renderLibrary(songs) {
       </div>
     `;
     
-    li.addEventListener('touchstart', () => li.classList.add('touching'), { passive: true });
-    li.addEventListener('touchend', () => li.classList.remove('touching'));
-    li.addEventListener('touchcancel', () => li.classList.remove('touching'));
+    const nameEl = li.querySelector('.song-name');
+    
+    // Long press to rename (500ms)
+    li.addEventListener('touchstart', (e) => {
+      li.classList.add('touching');
+      longPressTimer = setTimeout(() => {
+        e.preventDefault(); // Prevent click
+        li.classList.remove('touching');
+        startRename(song.id, song.name, nameEl);
+      }, 500);
+    }, { passive: false });
+    
+    li.addEventListener('touchend', () => {
+      clearTimeout(longPressTimer);
+      li.classList.remove('touching');
+    });
+    li.addEventListener('touchcancel', () => {
+      clearTimeout(longPressTimer);
+      li.classList.remove('touching');
+    });
+    li.addEventListener('touchmove', () => {
+      clearTimeout(longPressTimer); // Cancel on scroll
+    });
+    
+    // Normal tap to play
     li.addEventListener('click', () => togglePlayback(song.id));
     
     libraryEl.appendChild(li);
