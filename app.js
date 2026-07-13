@@ -1,4 +1,4 @@
-import { secondsToDecimalMMSS } from '/taktwerk/takt.js';
+// app.js - Main application import { secondsToDecimalMMSS } from '/taktwerk/takt.js';
 
 const DB_NAME = 'TaktwerkDB';
 const DB_VERSION = 1;
